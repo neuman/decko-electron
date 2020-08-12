@@ -13,33 +13,35 @@
 </template>
 
 <script>
-import fs from'fs'
+var fs = require('fs');
+console.log(fs);
 export default {
-  name: 'HelloWorld',
+  name: "HelloWorld",
   props: {
-    msg: String
-  },  data() {
+    msg: String,
+  },
+  data() {
     return {
       label: "",
     };
   },
-    methods: {
+  methods: {
     onSubmit() {
-      console.log(fs)
-      fs.readDir("/", function (dir) {
-        // es5
-        for (var i = 0, l = dir.length; i < l; i++) {
-          var filePath = dir[i];
-          console.log(filePath);
-        }
-        // es6
-        for (let filePath of dir) {
-          console.log(filePath);
-        }
-      });
+
+
+fs.readdir('/home/neuman', function(err, files) {
+  if (err) 
+    console.log(err); 
+  else { 
+    console.log("\nCurrent directory filenames:"); 
+    files.forEach(file => { 
+      console.log(file); 
+    }) 
+  } 
+});
     },
   },
-}
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
