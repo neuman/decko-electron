@@ -15,8 +15,7 @@
         </b-list-group>
       </b-col>
       <b-col cols="9">
-        <div v-html="msg">
-          </div>
+        <div v-html="msg"></div>
         <div class="h-100">
           <div>
             <b-tabs content-class="mt-3">
@@ -37,10 +36,15 @@ import uniqueId from "lodash.uniqueid";
 import DirectoryListItem from "./components/DirectoryListItem";
 import DebugTools from "./components/DebugTools";
 import fs from "fs";
+const { dialog } = require("electron").remote;
 require(["emmet/emmet"], function (data) {
   // this is huge. so require it async is better
   window.emmet = data.emmet;
 });
+
+//import router from './router'
+
+
 
 export default {
   name: "App",
@@ -51,7 +55,7 @@ export default {
   },
   data() {
     return {
-      rootDirectory:"",
+      rootDirectory: "",
       DirectoryListItems: [
         { id: uniqueId("todo-"), label: "Learn Vue", done: false },
       ],
@@ -59,6 +63,31 @@ export default {
     };
   },
   methods: {
+    openDirectory(path) {
+      fs.readdir(path, (err, files) => {
+        if (err) console.log(err);
+        else {
+          console.log("\nCurrent directory filenames:");
+          files.forEach((file) => {
+            console.log(file);
+            this.$emit("directory-list-item-added", path + "/" + file);
+          });
+        }
+      });
+    },
+    openFileDialog() {
+      dialog
+        .showOpenDialog({
+          title: "Select a subtitles file.",
+          filters: [{ name: "Subtitles", extensions: ["*"] }],
+          properties: ["openDirectory"],
+        })
+        .then((filenames) => {
+          console.log(filenames);
+          console.log(filenames.filePaths[0]);
+          this.openDirectory(filenames.filePaths[0]);
+        });
+    },
     addDirectoryListItem(DirectoryListItemLabel) {
       this.DirectoryListItems.push({
         id: uniqueId("todo-"),
@@ -91,6 +120,7 @@ export default {
     },
   },
 };
+
 
 
 </script>
