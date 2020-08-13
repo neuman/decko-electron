@@ -15,9 +15,17 @@
         </b-list-group>
       </b-col>
       <b-col cols="9">
+        <div v-html="msg">
+          </div>
         <div class="h-100">
-          <editor class="h-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
-
+          <div>
+            <b-tabs content-class="mt-3">
+              <b-tab title="Template" active></b-tab>
+              <b-tab title="Preview"></b-tab>
+              <b-tab title="Data" disabled></b-tab>
+            </b-tabs>
+          </div>
+          <editor class="h-100 w-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
         </div>
       </b-col>
     </b-row>
@@ -39,10 +47,11 @@ export default {
   components: {
     DebugTools,
     DirectoryListItem,
-    editor: require('vue2-ace-editor'),
+    editor: require("vue2-ace-editor"),
   },
   data() {
     return {
+      rootDirectory:"",
       DirectoryListItems: [
         { id: uniqueId("todo-"), label: "Learn Vue", done: false },
       ],
@@ -82,15 +91,11 @@ export default {
     },
   },
 };
+
+
 </script>
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>

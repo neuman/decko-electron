@@ -72,6 +72,23 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+  const electron = require('electron');
+  var menu = electron.Menu.buildFromTemplate([
+    {
+      label: 'Electron',
+      submenu: [
+        {
+          label: 'Options',
+          click: function () {
+            win.webContents.send('hello', 'Hello World!');
+          }
+        }
+      ]
+    }
+  ]);
+
+  electron.Menu.setApplicationMenu(menu);
+
 })
 
 // Exit cleanly on request from parent process in development mode.
