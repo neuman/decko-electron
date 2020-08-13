@@ -1,6 +1,5 @@
 <template>
   <div id="app" class="h-100">
-    <debug-tools @directory-list-item-added="addDirectoryListItem"></debug-tools>
     <b-row class="h-100">
       <b-col cols="3" class="h-100 overflow-auto">
         <b-list-group>
@@ -34,24 +33,29 @@
 <script>
 import uniqueId from "lodash.uniqueid";
 import DirectoryListItem from "./components/DirectoryListItem";
-import DebugTools from "./components/DebugTools";
+//import DebugTools from "./components/DebugTools";
 import fs from "fs";
 const { dialog } = require("electron").remote;
 require(["emmet/emmet"], function (data) {
   // this is huge. so require it async is better
   window.emmet = data.emmet;
 });
-
-//import router from './router'
-
-
+const electron = require("electron");
 
 export default {
   name: "App",
   components: {
-    DebugTools,
+    //DebugTools,
     DirectoryListItem,
     editor: require("vue2-ace-editor"),
+  },
+  created: function () {
+    electron.ipcRenderer.on("hello", (event, arg) => {
+      console.log(event, arg);
+      //App.methods.openFileDialog();
+      console.log(this);
+      this.openFileDialog();
+    });
   },
   data() {
     return {
@@ -70,12 +74,13 @@ export default {
           console.log("\nCurrent directory filenames:");
           files.forEach((file) => {
             console.log(file);
-            this.$emit("directory-list-item-added", path + "/" + file);
+            this.addDirectoryListItem(path + "/" + file);
           });
         }
       });
     },
     openFileDialog() {
+      console.log("THIS");
       dialog
         .showOpenDialog({
           title: "Select a subtitles file.",
@@ -85,10 +90,13 @@ export default {
         .then((filenames) => {
           console.log(filenames);
           console.log(filenames.filePaths[0]);
+          console.log("THIS");
+          console.log(this);
           this.openDirectory(filenames.filePaths[0]);
         });
     },
     addDirectoryListItem(DirectoryListItemLabel) {
+      console.log(this);
       this.DirectoryListItems.push({
         id: uniqueId("todo-"),
         label: DirectoryListItemLabel,
@@ -120,9 +128,6 @@ export default {
     },
   },
 };
-
-
-
 </script>
 
 <style>

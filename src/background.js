@@ -72,6 +72,7 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+  
   const electron = require('electron');
   var menu = electron.Menu.buildFromTemplate([
     {
