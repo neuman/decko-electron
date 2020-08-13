@@ -1,5 +1,5 @@
 <template>
-  <form @submit.prevent="onSubmit">
+  <form @submit.prevent="openFile">
     <label for="new-todo-input">What needs to be done?</label>
     <input
       type="text"
@@ -13,8 +13,8 @@
 </template>
 
 <script>
-var fs = require('fs');
-console.log(fs);
+var fs = require("fs");
+const { dialog } = require("electron").remote;
 export default {
   name: "HelloWorld",
   props: {
@@ -26,19 +26,30 @@ export default {
     };
   },
   methods: {
-    onSubmit() {
-
-
-fs.readdir('/home/neuman', function(err, files) {
-  if (err) 
-    console.log(err); 
-  else { 
-    console.log("\nCurrent directory filenames:"); 
-    files.forEach(file => { 
-      console.log(file); 
-    }) 
-  } 
-});
+    openDirectory(path) {
+      fs.readdir(path, function (err, files) {
+        if (err) console.log(err);
+        else {
+          console.log("\nCurrent directory filenames:");
+          files.forEach((file) => {
+            console.log(file);
+          });
+        }
+      });
+    },
+    openFile() {
+      dialog.showOpenDialog(
+        {
+          title: "Select a subtitles file.",
+          filters: [{ name: "Subtitles", extensions: ["*"] }],
+          properties: ["openDirectory"],
+        }).then(
+        (filenames) => {
+          console.log(filenames);
+          console.log(filenames.filePaths[0]);
+          this.openDirectory(filenames.filePaths[0]);
+        }
+      );
     },
   },
 };
