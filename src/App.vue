@@ -54,7 +54,7 @@ export default {
       this.openProjectDialog();
     });
     electron.ipcRenderer.on("newProject", (event, arg) => {
-      this.openProjectDialog();
+      this.newProjectDialog();
     });
     electron.ipcRenderer.on("saveOpenFile", (event, arg) => {
       this.saveOpenFile();
@@ -62,20 +62,34 @@ export default {
   },
   data() {
     return {
-      rootDirectory: undefined,
+      rootDirectoryPath: undefined,
       openFile: undefined,
       DirectoryListItems: [
         //{ id: uniqueId("todo-"), label: "Learn Vue", done: false },
       ],
-      msg: "Pandas",
+      msg: "",
     };
   },
   methods: {
+    newProjectDialog() {
+      dialog
+        .showOpenDialog({
+          title: "Select an empty folder to create your new project in.",
+          filters: [{ name: "Folders", extensions: ["*"] }],
+          properties: ["openDirectory"],
+        })
+        .then((filenames) => {
+          //console.log(filenames.filePaths[0]);
+          var directoryPath = filenames.filePaths[0];
+          this.rootDirectoryPath = directoryPath;
+          //fs.mkdirSync(directoryPath+"/NewProject");
+        });
+    },
     openProjectDialog() {
       dialog
         .showOpenDialog({
-          title: "Select a subtitles file.",
-          filters: [{ name: "Subtitles", extensions: ["*"] }],
+          title: "Select your project folder.",
+          filters: [{ name: "Folders", extensions: ["*"] }],
           properties: ["openDirectory"],
         })
         .then((filenames) => {
