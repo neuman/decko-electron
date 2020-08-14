@@ -59,6 +59,9 @@ export default {
     electron.ipcRenderer.on("saveOpenFile", (event, arg) => {
       this.saveOpenFile();
     });
+    electron.ipcRenderer.on("importAllData", (event, arg) => {
+      this.importAllDataDialog();
+    });
   },
   data() {
     return {
@@ -95,17 +98,20 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var directoryPath = filenames.filePaths[0];
-          fs.readdir(directoryPath, (err, files) => {
-            if (err) console.log(err);
-            else {
-              console.log("\nCurrent directory filenames:");
-              files.forEach((file) => {
-                console.log(file);
-                this.addDirectoryListItem(directoryPath, file);
-              });
-            }
-          });
+          this.openProjectDirectory(directoryPath);
         });
+    },
+    openProjectDirectory(directoryPath) {
+      fs.readdir(directoryPath, (err, files) => {
+        if (err) console.log(err);
+        else {
+          console.log("\nCurrent directory filenames:");
+          files.forEach((file) => {
+            console.log(file);
+            this.addDirectoryListItem(directoryPath, file);
+          });
+        }
+      });
     },
     addDirectoryListItem(directoryPath, fileName) {
       this.DirectoryListItems.push({
@@ -121,7 +127,7 @@ export default {
       this.openFile = filePath;
 
       console.log(filePath);
-      var output = "noodles";
+      var output = "NO DATA READ";
       output = fs.readFileSync(filePath, "utf8", (err, data) => {
         if (err) throw err;
         //console.log(data);
@@ -134,6 +140,41 @@ export default {
     saveOpenFile() {
       fs.writeFileSync(this.openFile, this.msg);
       console.log("File written successfully\n");
+    },
+    importAllDataDialog() {
+      dialog
+        .showOpenDialog({
+          title: "Select Your .json File.",
+          filters: [{ name: ".json", extensions: ["json"] }],
+          properties: ["openFile"],
+        })
+        .then((filenames) => {
+          //console.log(filenames.filePaths[0]);
+          var filePath = filenames.filePaths[0];
+          var output = "NO DATA READ";
+          output = fs.readFileSync(filePath, "utf8", (err, data) => {
+            if (err) throw err;
+            //console.log(data);
+            output = data;
+          });
+          var jsonData = JSON.parse(output);
+          for (var attributename in jsonData) {
+            console.log(attributename + ": " + jsonData[attributename]);
+            var componentDirectoryPath =
+              this.rootDirectoryPath + "/" + attributename;
+            //create folder
+            fs.mkdirSync(componentDirectoryPath);
+            //create data.json file
+            fs.writeFileSync(
+              componentDirectoryPath + "/data.json",
+              JSON.stringify(jsonData[attributename])
+            );
+            //create empty template file
+            fs.writeFileSync(componentDirectoryPath + "/template.html", "");
+            //create empty css file
+            fs.writeFileSync(componentDirectoryPath + "/styles.css", "");
+          }
+        });
     },
     editorInit() {
       require("brace/ext/language_tools"); //language extension prerequsite...

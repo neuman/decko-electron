@@ -141,6 +141,17 @@ const template = [
       }
     ]
   },
+  {
+    label: 'Data',
+    submenu: [
+      {
+        label: 'Import All',
+        click: function () {
+          win.webContents.send('importAllData', '');
+        }
+      }
+    ]
+  },
   // { role: 'editMenu' }
   {
     label: 'Edit',
