@@ -3,26 +3,21 @@
     <b-row class="h-100">
       <b-col cols="3" class="h-100 overflow-auto">
         <b-list-group>
-          <b-list-group-item v-for="item in DirectoryListItems" :key="item.id">
-            <directory-list-item
+          <b-list-group-item v-for="item in Assets" :key="item.id">
+            <asset-list-item
               :label="item.label"
+              :category="item.category"
               :volatile="item.volatile"
               :id="item.id"
               :filePath="item.filePath"
-              @directory-list-item-clicked="openFilePathInEditor"
-            ></directory-list-item>
+              :depth="item.depth"
+              @asset-selected="assetSelected"
+            ></asset-list-item>
           </b-list-group-item>
         </b-list-group>
       </b-col>
       <b-col cols="9">
         <div class="h-100">
-          <div>
-            <b-tabs content-class="mt-3">
-              <b-tab title="Template" active></b-tab>
-              <b-tab title="Preview"></b-tab>
-              <b-tab title="Data" disabled></b-tab>
-            </b-tabs>
-          </div>
           <editor class="h-100 w-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
         </div>
       </b-col>
@@ -32,7 +27,7 @@
 
 <script>
 import uniqueId from "lodash.uniqueid";
-import DirectoryListItem from "./components/DirectoryListItem";
+import AssetListItem from "./components/AssetListItem";
 //import DebugTools from "./components/DebugTools";
 import fs from "fs";
 const { dialog } = require("electron").remote;
@@ -42,11 +37,19 @@ require(["emmet/emmet"], function (data) {
 });
 const electron = require("electron");
 
+const assetCategories = {
+  DIRECTORY: "directory",
+  TEMPLATE: "template",
+  STYLESHEET: "stylesheet",
+  DATAFILE: "datafile",
+  OTHER: "other",
+};
+
 export default {
   name: "App",
   components: {
     //DebugTools,
-    DirectoryListItem,
+    AssetListItem,
     editor: require("vue2-ace-editor"),
   },
   created: function () {
@@ -55,6 +58,9 @@ export default {
     });
     electron.ipcRenderer.on("newProject", (event, arg) => {
       this.newProjectDialog();
+    });
+    electron.ipcRenderer.on("saveProject", (event, arg) => {
+      this.saveProject();
     });
     electron.ipcRenderer.on("saveOpenFile", (event, arg) => {
       this.saveOpenFile();
@@ -66,10 +72,9 @@ export default {
   data() {
     return {
       rootDirectoryPath: undefined,
+      selectedDirectoryListItem: undefined,
       openFile: undefined,
-      DirectoryListItems: [
-        //{ id: uniqueId("todo-"), label: "Learn Vue", done: false },
-      ],
+      Assets: [],
       msg: "",
     };
   },
@@ -91,15 +96,24 @@ export default {
     openProjectDialog() {
       dialog
         .showOpenDialog({
-          title: "Select your project folder.",
-          filters: [{ name: "Folders", extensions: ["*"] }],
-          properties: ["openDirectory"],
+          title: "Select your project file.",
+          filters: [{ name: "Decko File", extensions: ["dko"] }],
+          properties: ["openFile"],
         })
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
-          var directoryPath = filenames.filePaths[0];
-          this.openProjectDirectory(directoryPath);
+          var filePath = filenames.filePaths[0];
+          this.openProjectFile(filePath);
         });
+    },
+    openProjectFile(filePath){
+      var output = "NO DATA READ";
+      output = fs.readFileSync(filePath, "utf8", (err, data) => {
+        if (err) throw err;
+        //console.log(data);
+        output = data;
+      });
+      this.Assets = JSON.parse(output);
     },
     openProjectDirectory(directoryPath) {
       fs.readdir(directoryPath, (err, files) => {
@@ -115,11 +129,30 @@ export default {
     },
     addDirectoryListItem(directoryPath, fileName) {
       this.DirectoryListItems.push({
-        id: uniqueId("todo-"),
+        id: uniqueId("directoryListItem-"),
         label: fileName,
         filePath: directoryPath + "/" + fileName,
         volatile: false,
       });
+    },
+    addAsset(parent, category, directoryPath, fileName, label, depth) {
+      var parentId = undefined;
+      if (parent != undefined) {
+        parentId = parent.id;
+      }
+      var output = {
+        id: uniqueId("asset-"),
+        parentId: parentId,
+        category: category,
+        label: label,
+        fileName: fileName,
+        filePath: directoryPath + "/" + fileName,
+        active: true,
+        singleton: false,
+        depth:depth
+      };
+      this.Assets.push(output);
+      return output;
     },
     openFilePathInEditor(filePath) {
       console.log("openFilePathInEditor", filePath);
@@ -141,6 +174,10 @@ export default {
       fs.writeFileSync(this.openFile, this.msg);
       console.log("File written successfully\n");
     },
+    saveProject() {
+      fs.writeFileSync(this.rootDirectoryPath+"/project.dko", JSON.stringify(this.Assets));
+      console.log("File written successfully\n");
+    },
     importAllDataDialog() {
       dialog
         .showOpenDialog({
@@ -159,22 +196,76 @@ export default {
           });
           var jsonData = JSON.parse(output);
           for (var attributename in jsonData) {
-            console.log(attributename + ": " + jsonData[attributename]);
-            var componentDirectoryPath =
+            var pieceDirectoryPath =
               this.rootDirectoryPath + "/" + attributename;
-            //create folder
-            fs.mkdirSync(componentDirectoryPath);
+            //create Piece in state
+            var newPiece = this.addAsset(
+              undefined,
+              assetCategories.DIRECTORY,
+              pieceDirectoryPath,
+              undefined,
+              attributename,
+              0
+            );
+            //create folder for piece
+            console.log(pieceDirectoryPath);
+            fs.mkdirSync(pieceDirectoryPath);
+
+            //make add datafile to piece
+            var newFileName = "data.json";
+            this.addAsset(
+              newPiece,
+              assetCategories.DATAFILE,
+              pieceDirectoryPath,
+              newFileName,
+              newFileName,
+              1
+            );
             //create data.json file
             fs.writeFileSync(
-              componentDirectoryPath + "/data.json",
+              pieceDirectoryPath + "/data.json",
               JSON.stringify(jsonData[attributename])
             );
+            //add template to piece
+            newFileName = "template.html";
+            this.addAsset(
+              newPiece,
+              assetCategories.TEMPLATE,
+              pieceDirectoryPath,
+              newFileName,
+              newFileName,
+              1
+            );
             //create empty template file
-            fs.writeFileSync(componentDirectoryPath + "/template.html", "");
+            fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
+
+            //add style to piece
+            newFileName = "style.css";
+            this.addAsset(
+              newPiece,
+              assetCategories.STYLESHEET,
+              pieceDirectoryPath,
+              newFileName,
+              newFileName,
+              1
+            );
             //create empty css file
-            fs.writeFileSync(componentDirectoryPath + "/styles.css", "");
+            fs.writeFileSync(pieceDirectoryPath + "/"+newFileName, "");
           }
+          console.log(this.Assets);
         });
+    },
+    assetSelected(id) {
+      console.log("assetSelected", id)
+      var match = this.Assets.find((obj) => {
+        return obj.id === id;
+      });
+      //if it's a dir, expand it
+      //if it's a file, open it in editor
+      if (match.parentId != undefined) {
+        console.log("openFilePathInEditor", match.filePath);
+        this.openFilePathInEditor(match.filePath);
+      }
     },
     editorInit() {
       require("brace/ext/language_tools"); //language extension prerequsite...

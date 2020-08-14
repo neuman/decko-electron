@@ -134,7 +134,13 @@ const template = [
         }
       },
       {
-        label: 'Save',
+        label: 'Save Project',
+        click: function () {
+          win.webContents.send('saveProject', '');
+        }
+      },
+      {
+        label: 'Save Open File',
         click: function () {
           win.webContents.send('saveOpenFile', '');
         }
