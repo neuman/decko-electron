@@ -132,6 +132,12 @@ const template = [
         click: function () {
           win.webContents.send('newProject', '');
         }
+      },
+      {
+        label: 'Save',
+        click: function () {
+          win.webContents.send('saveOpenFile', '');
+        }
       }
     ]
   },

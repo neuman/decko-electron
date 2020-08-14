@@ -56,10 +56,14 @@ export default {
     electron.ipcRenderer.on("newProject", (event, arg) => {
       this.openProjectDialog();
     });
+    electron.ipcRenderer.on("saveOpenFile", (event, arg) => {
+      this.saveOpenFile();
+    });
   },
   data() {
     return {
-      rootDirectory: "",
+      rootDirectory: undefined,
+      openFile: undefined,
       DirectoryListItems: [
         //{ id: uniqueId("todo-"), label: "Learn Vue", done: false },
       ],
@@ -98,8 +102,9 @@ export default {
       });
     },
     openFilePathInEditor(filePath) {
-      console.log("openFilePathInEditor");
+      console.log("openFilePathInEditor", filePath);
       this.msg = filePath;
+      this.openFile = filePath;
 
       console.log(filePath);
       var output = "noodles";
@@ -111,6 +116,10 @@ export default {
 
       console.log(output);
       this.msg = output;
+    },
+    saveOpenFile() {
+      fs.writeFileSync(this.openFile, this.msg);
+      console.log("File written successfully\n");
     },
     editorInit() {
       require("brace/ext/language_tools"); //language extension prerequsite...
