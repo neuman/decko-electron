@@ -6,7 +6,7 @@
           <b-list-group-item v-for="item in DirectoryListItems" :key="item.id">
             <directory-list-item
               :label="item.label"
-              :done="item.done"
+              :done="item.volatile"
               :id="item.id"
               @directory-list-item-clicked="clickDirectoryListItem"
             ></directory-list-item>
@@ -14,7 +14,6 @@
         </b-list-group>
       </b-col>
       <b-col cols="9">
-        <div v-html="msg"></div>
         <div class="h-100">
           <div>
             <b-tabs content-class="mt-3">
@@ -50,37 +49,24 @@ export default {
     editor: require("vue2-ace-editor"),
   },
   created: function () {
-    electron.ipcRenderer.on("hello", (event, arg) => {
-      console.log(event, arg);
-      //App.methods.openFileDialog();
-      console.log(this);
-      this.openFileDialog();
+    electron.ipcRenderer.on("openProject", (event, arg) => {
+      this.openProjectDialog();
+    });
+    electron.ipcRenderer.on("newProject", (event, arg) => {
+      this.openProjectDialog();
     });
   },
   data() {
     return {
       rootDirectory: "",
       DirectoryListItems: [
-        { id: uniqueId("todo-"), label: "Learn Vue", done: false },
+        //{ id: uniqueId("todo-"), label: "Learn Vue", done: false },
       ],
       msg: "Pandas",
     };
   },
   methods: {
-    openDirectory(path) {
-      fs.readdir(path, (err, files) => {
-        if (err) console.log(err);
-        else {
-          console.log("\nCurrent directory filenames:");
-          files.forEach((file) => {
-            console.log(file);
-            this.addDirectoryListItem(path + "/" + file);
-          });
-        }
-      });
-    },
-    openFileDialog() {
-      console.log("THIS");
+    openProjectDialog() {
       dialog
         .showOpenDialog({
           title: "Select a subtitles file.",
@@ -88,11 +74,18 @@ export default {
           properties: ["openDirectory"],
         })
         .then((filenames) => {
-          console.log(filenames);
-          console.log(filenames.filePaths[0]);
-          console.log("THIS");
-          console.log(this);
-          this.openDirectory(filenames.filePaths[0]);
+          //console.log(filenames.filePaths[0]);
+          var filePath = filenames.filePaths[0];
+          fs.readdir(filePath, (err, files) => {
+            if (err) console.log(err);
+            else {
+              console.log("\nCurrent directory filenames:");
+              files.forEach((file) => {
+                console.log(file);
+                this.addDirectoryListItem(filePath + "/" + file);
+              });
+            }
+          });
         });
     },
     addDirectoryListItem(DirectoryListItemLabel) {

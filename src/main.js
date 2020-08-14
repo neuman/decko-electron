@@ -15,16 +15,3 @@ Vue.config.productionTip = false
 new Vue({
   render: h => h(App),
 }).$mount('#app')
-
-export const messageBus = new Vue();
-console.log(messageBus);
-
-/*
-const electron = require("electron");
-electron.ipcRenderer.on("hello", (event, arg) => {
-  console.log(event, arg);
-  console.log(App);
-  //App.methods.openFileDialog();
-  messageBus.$emit('testEvent',"TESTY");
-
-});*/
