@@ -18,7 +18,12 @@
       </b-col>
       <b-col cols="9">
         <div class="h-100">
-          <editor class="h-100 w-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
+          <div v-if="preview == undefined">
+            <editor class="h-100 w-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
+          </div>
+          <div v-else>
+            <div v-html="preview"></div>
+          </div>
         </div>
       </b-col>
     </b-row>
@@ -26,6 +31,13 @@
 </template>
 
 <script>
+require("brace/ext/language_tools"); //language extension prerequsite...
+require("brace/mode/html");
+require("brace/mode/javascript"); //language
+require("brace/mode/less");
+require("brace/theme/chrome");
+require("brace/snippets/javascript"); //snippet
+import Mustache from "mustache";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
 //import DebugTools from "./components/DebugTools";
@@ -76,6 +88,7 @@ export default {
       openFile: undefined,
       Assets: [],
       msg: "",
+      preview: undefined,
     };
   },
   methods: {
@@ -106,7 +119,7 @@ export default {
           this.openProjectFile(filePath);
         });
     },
-    openProjectFile(filePath){
+    openProjectFile(filePath) {
       var output = "NO DATA READ";
       output = fs.readFileSync(filePath, "utf8", (err, data) => {
         if (err) throw err;
@@ -149,7 +162,7 @@ export default {
         filePath: directoryPath + "/" + fileName,
         active: true,
         singleton: false,
-        depth:depth
+        depth: depth,
       };
       this.Assets.push(output);
       return output;
@@ -175,7 +188,10 @@ export default {
       console.log("File written successfully\n");
     },
     saveProject() {
-      fs.writeFileSync(this.rootDirectoryPath+"/project.dko", JSON.stringify(this.Assets));
+      fs.writeFileSync(
+        this.rootDirectoryPath + "/project.dko",
+        JSON.stringify(this.Assets)
+      );
       console.log("File written successfully\n");
     },
     importAllDataDialog() {
@@ -250,31 +266,82 @@ export default {
               1
             );
             //create empty css file
-            fs.writeFileSync(pieceDirectoryPath + "/"+newFileName, "");
+            fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
           }
           console.log(this.Assets);
         });
     },
+    search(input) {
+      return Object.keys(this).every((key) => input[key] === this[key]);
+    },
+    searchAssets(query) {
+      return this.Assets.filter(this.search, query);
+    },
     assetSelected(id) {
-      console.log("assetSelected", id)
+      console.log("assetSelected", id);
       var match = this.Assets.find((obj) => {
         return obj.id === id;
       });
       //if it's a dir, expand it
       //if it's a file, open it in editor
-      if (match.parentId != undefined) {
+      if (match.parentId == undefined) {
+        //get template and read it
+
+        //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
+        var templateFilePath = undefined;
+        this.Assets.forEach((element) => {
+          if (
+            element.parentId == id &&
+            element.category == assetCategories.TEMPLATE
+          ) {
+            templateFilePath = element.filePath;
+          }
+        });
+        console.log("templateFilePath", templateFilePath);
+        var output = "NO DATA READ";
+        output = fs.readFileSync(templateFilePath, "utf8", (err, data) => {
+          if (err) throw err;
+          //console.log(data);
+          output = data;
+        });
+        var templateContent = output;
+
+        //get datafile filePath
+        var datafileFilePath = undefined;
+        this.Assets.forEach((element) => {
+          if (
+            element.parentId == id &&
+            element.category == assetCategories.DATAFILE
+          ) {
+            datafileFilePath = element.filePath;
+          }
+        });
+        console.log("datafileFilePath", datafileFilePath);
+
+        //read datafile
+        output = "NO DATA READ";
+        output = fs.readFileSync(datafileFilePath, "utf8", (err, data) => {
+          if (err) throw err;
+          //console.log(data);
+          output = data;
+        });
+        var datafileContent = JSON.parse(output);
+        console.log(
+          "rendering template ",
+          templateFilePath,
+          "with data ",
+          datafileFilePath
+        );
+        this.preview = Mustache.render(templateContent, datafileContent[0]);
+        console.log("rendered html", this.preview);
+      } else {
         console.log("openFilePathInEditor", match.filePath);
+        this.preview = undefined;
+        this.editorInit();
         this.openFilePathInEditor(match.filePath);
       }
     },
-    editorInit() {
-      require("brace/ext/language_tools"); //language extension prerequsite...
-      require("brace/mode/html");
-      require("brace/mode/javascript"); //language
-      require("brace/mode/less");
-      require("brace/theme/chrome");
-      require("brace/snippets/javascript"); //snippet
-    },
+    editorInit() {},
   },
 };
 </script>
