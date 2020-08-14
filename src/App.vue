@@ -6,9 +6,10 @@
           <b-list-group-item v-for="item in DirectoryListItems" :key="item.id">
             <directory-list-item
               :label="item.label"
-              :done="item.volatile"
+              :volatile="item.volatile"
               :id="item.id"
-              @directory-list-item-clicked="clickDirectoryListItem"
+              :filePath="item.filePath"
+              @directory-list-item-clicked="openFilePathInEditor"
             ></directory-list-item>
           </b-list-group-item>
         </b-list-group>
@@ -75,34 +76,34 @@ export default {
         })
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
-          var filePath = filenames.filePaths[0];
-          fs.readdir(filePath, (err, files) => {
+          var directoryPath = filenames.filePaths[0];
+          fs.readdir(directoryPath, (err, files) => {
             if (err) console.log(err);
             else {
               console.log("\nCurrent directory filenames:");
               files.forEach((file) => {
                 console.log(file);
-                this.addDirectoryListItem(filePath + "/" + file);
+                this.addDirectoryListItem(directoryPath, file);
               });
             }
           });
         });
     },
-    addDirectoryListItem(DirectoryListItemLabel) {
-      console.log(this);
+    addDirectoryListItem(directoryPath, fileName) {
       this.DirectoryListItems.push({
         id: uniqueId("todo-"),
-        label: DirectoryListItemLabel,
-        done: false,
+        label: fileName,
+        filePath: directoryPath + "/" + fileName,
+        volatile: false,
       });
     },
-    clickDirectoryListItem(DirectoryListItemLabel) {
-      console.log("clickDirectoryListItem");
-      this.msg = DirectoryListItemLabel;
+    openFilePathInEditor(filePath) {
+      console.log("openFilePathInEditor");
+      this.msg = filePath;
 
-      console.log(DirectoryListItemLabel);
+      console.log(filePath);
       var output = "noodles";
-      output = fs.readFileSync(DirectoryListItemLabel, "utf8", (err, data) => {
+      output = fs.readFileSync(filePath, "utf8", (err, data) => {
         if (err) throw err;
         //console.log(data);
         output = data;
