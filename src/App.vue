@@ -1,9 +1,8 @@
 <template>
   <div id="app" class="h-100">
     <b-row class="h-100">
-      <b-col cols="3" class="h-100 overflow-auto">
-        <b-list-group>
-          <b-list-group-item v-for="item in Assets" :key="item.id">
+      <b-col cols="3" class="card h-100 overflow-auto">
+          <div v-for="item in Assets" :key="item.id">
             <asset-list-item
               :label="item.label"
               :category="item.category"
@@ -13,13 +12,12 @@
               :depth="item.depth"
               @asset-selected="assetSelected"
             ></asset-list-item>
-          </b-list-group-item>
-        </b-list-group>
+          </div>
       </b-col>
       <b-col cols="9">
         <div class="h-100">
-          <div v-if="preview == undefined">
-            <editor class="h-100 w-100" v-model="msg" @init="editorInit" lang="html" theme="chrome"></editor>
+          <div class="h-100" v-if="preview == undefined">
+            <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
           <div v-else>
             <div v-html="preview"></div>
@@ -31,23 +29,15 @@
 </template>
 
 <script>
-require("brace/ext/language_tools"); //language extension prerequsite...
-require("brace/mode/html");
-require("brace/mode/javascript"); //language
-require("brace/mode/less");
-require("brace/theme/chrome");
-require("brace/snippets/javascript"); //snippet
 import Mustache from "mustache";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
 //import DebugTools from "./components/DebugTools";
 import fs from "fs";
 const { dialog } = require("electron").remote;
-require(["emmet/emmet"], function (data) {
-  // this is huge. so require it async is better
-  window.emmet = data.emmet;
-});
 const electron = require("electron");
+import { codemirror } from "vue-codemirror";
+import "codemirror/lib/codemirror.css";
 
 const assetCategories = {
   DIRECTORY: "directory",
@@ -62,7 +52,7 @@ export default {
   components: {
     //DebugTools,
     AssetListItem,
-    editor: require("vue2-ace-editor"),
+    codemirror,
   },
   created: function () {
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -89,6 +79,15 @@ export default {
       Assets: [],
       msg: "",
       preview: undefined,
+      cmOptions: {
+        // codemirror options
+        tabSize: 4,
+        mode: "text/javascript",
+        theme: "base16-dark",
+        lineNumbers: true,
+        line: true,
+        // more codemirror options, 更多 codemirror 的高级配置...
+      },
     };
   },
   methods: {
@@ -190,7 +189,7 @@ export default {
     saveProject() {
       fs.writeFileSync(
         this.rootDirectoryPath + "/project.dko",
-        JSON.stringify(this.Assets)
+        JSON.stringify(this.Assets,4," ")
       );
       console.log("File written successfully\n");
     },
@@ -221,7 +220,7 @@ export default {
               pieceDirectoryPath,
               undefined,
               attributename,
-              0
+              1
             );
             //create folder for piece
             console.log(pieceDirectoryPath);
@@ -235,12 +234,12 @@ export default {
               pieceDirectoryPath,
               newFileName,
               newFileName,
-              1
+              2
             );
             //create data.json file
             fs.writeFileSync(
               pieceDirectoryPath + "/data.json",
-              JSON.stringify(jsonData[attributename])
+              JSON.stringify(jsonData[attributename],4," ")
             );
             //add template to piece
             newFileName = "template.html";
@@ -250,7 +249,7 @@ export default {
               pieceDirectoryPath,
               newFileName,
               newFileName,
-              1
+              2
             );
             //create empty template file
             fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
@@ -263,11 +262,12 @@ export default {
               pieceDirectoryPath,
               newFileName,
               newFileName,
-              1
+              2
             );
             //create empty css file
             fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
           }
+          this.saveProject();
           console.log(this.Assets);
         });
     },
@@ -337,16 +337,19 @@ export default {
       } else {
         console.log("openFilePathInEditor", match.filePath);
         this.preview = undefined;
-        this.editorInit();
         this.openFilePathInEditor(match.filePath);
       }
     },
-    editorInit() {},
   },
 };
 </script>
 
 <style>
-#app {
+
+.CodeMirror{
+  height:100%;
+  max-height: 100%;
 }
+
+
 </style>
