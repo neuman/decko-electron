@@ -144,6 +144,12 @@ const template = [
         click: function () {
           win.webContents.send('saveOpenFile', '');
         }
+      },
+      {
+        label: 'Debug Action',
+        click: function () {
+          win.webContents.send('debugAction', '');
+        }
       }
     ]
   },
@@ -236,6 +242,9 @@ menu = electron.Menu.buildFromTemplate(template)
 Menu.setApplicationMenu(menu)
 
 
+
+
+
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -252,3 +261,47 @@ if (isDevelopment) {
     })
   }
 }
+
+
+const http = require('http');
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+var server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Panda, World!\n');
+});
+console.log('made new server');
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+
+const { ipcMain } = require('electron')
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log('background.js asynchronous-message', arg);
+  //console.log(arg) // prints "ping"
+
+  server = http.createServer((req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Goodbye world!\n');
+  }); 
+
+
+  event.reply('asynchronous-reply', server.connections)
+})
+
+ipcMain.on('project-file-opened', (event, arg) => {
+  server = http.createServer((req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Goodbye world!\n');
+  }); 
+
+
+  console.log(arg) // prints "ping";
+  event.returnValue = arg;
+})

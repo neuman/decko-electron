@@ -2,21 +2,22 @@
   <div id="app" class="h-100">
     <b-row class="h-100">
       <b-col cols="3" class="card h-100 overflow-auto">
-          <div v-for="item in Assets" :key="item.id">
-            <asset-list-item
-              :label="item.label"
-              :category="item.category"
-              :volatile="item.volatile"
-              :id="item.id"
-              :filePath="item.filePath"
-              :depth="item.depth"
-              @asset-selected="assetSelected"
-            ></asset-list-item>
-          </div>
+        <div v-for="item in Assets" :key="item.id">
+          <asset-list-item
+            :label="item.label"
+            :category="item.category"
+            :volatile="item.volatile"
+            :id="item.id"
+            :filePath="item.filePath"
+            :depth="item.depth"
+            @asset-selected="assetSelected"
+          ></asset-list-item>
+        </div>
       </b-col>
       <b-col cols="9">
         <div class="h-100">
           <div class="h-100" v-if="preview == undefined">
+            <preview-iframe ></preview-iframe>
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
           <div v-else>
@@ -32,7 +33,7 @@
 import Mustache from "mustache";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
-//import DebugTools from "./components/DebugTools";
+import PreviewIframe from "./components/PreviewIframe";
 import fs from "fs";
 const { dialog } = require("electron").remote;
 const electron = require("electron");
@@ -50,7 +51,7 @@ const assetCategories = {
 export default {
   name: "App",
   components: {
-    //DebugTools,
+    PreviewIframe,
     AssetListItem,
     codemirror,
   },
@@ -69,6 +70,9 @@ export default {
     });
     electron.ipcRenderer.on("importAllData", (event, arg) => {
       this.importAllDataDialog();
+    });
+    electron.ipcRenderer.on("debugAction", (event, arg) => {
+      this.debugAction();
     });
   },
   data() {
@@ -91,6 +95,12 @@ export default {
     };
   },
   methods: {
+    debugAction() {
+      electron.ipcRenderer.on("asynchronous-reply", (event, arg) => {
+        console.log(arg); // prints "pong"
+      });
+      electron.ipcRenderer.send("asynchronous-message", "ping");
+    },
     newProjectDialog() {
       dialog
         .showOpenDialog({
@@ -189,7 +199,7 @@ export default {
     saveProject() {
       fs.writeFileSync(
         this.rootDirectoryPath + "/project.dko",
-        JSON.stringify(this.Assets,4," ")
+        JSON.stringify(this.Assets, 4, " ")
       );
       console.log("File written successfully\n");
     },
@@ -239,7 +249,7 @@ export default {
             //create data.json file
             fs.writeFileSync(
               pieceDirectoryPath + "/data.json",
-              JSON.stringify(jsonData[attributename],4," ")
+              JSON.stringify(jsonData[attributename], 4, " ")
             );
             //add template to piece
             newFileName = "template.html";
@@ -345,11 +355,8 @@ export default {
 </script>
 
 <style>
-
-.CodeMirror{
-  height:100%;
+.CodeMirror {
+  height: 100%;
   max-height: 100%;
 }
-
-
 </style>
