@@ -266,7 +266,7 @@ if (isDevelopment) {
 const http = require('http');
 
 const hostname = '127.0.0.1';
-const port = 3000;
+var port = 3000;
 
 var server = http.createServer((req, res) => {
   res.statusCode = 200;
@@ -279,18 +279,30 @@ server.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
 });
 
+server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Goodbye world!\n');
+}); 
+
 const { ipcMain } = require('electron')
 ipcMain.on('asynchronous-message', (event, arg) => {
+  port+=1;
   console.log('background.js asynchronous-message', arg);
   //console.log(arg) // prints "ping"
-
+  server.removeAllListeners();
+  server.close();
   server = http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('Goodbye world!\n');
   }); 
 
+  server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}/`);
+  });
 
+  win.webContents.send('setIframeURL', 'http://'+hostname+':'+port+'/');
   event.reply('asynchronous-reply', server.connections)
 })
 
