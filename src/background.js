@@ -4,6 +4,7 @@ import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const createHtmlElement = require('create-html-element');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -72,7 +73,7 @@ app.on('ready', async () => {
     }
   }
   createWindow()
-  
+
   const electron = require('electron');
   var menu = electron.Menu.buildFromTemplate([
     {
@@ -98,148 +99,149 @@ app.on('ready', async () => {
 
   const { app, Menu } = require('electron')
 
-const isMac = process.platform === 'darwin'
+  const isMac = process.platform === 'darwin'
 
-const template = [
-  // { role: 'appMenu' }
-  ...(isMac ? [{
-    label: app.name,
-    submenu: [
-      { role: 'about' },
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideothers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
-    ]
-  }] : []),
-  // { role: 'fileMenu' }
-  {
-    label: 'File',
-    submenu: [
-      isMac ? { role: 'close' } : { role: 'quit' },
-      {
-        label: 'Open Project',
-        click: function () {
-          win.webContents.send('openProject', '');
-        }
-      },
-      {
-        label: 'New Project',
-        click: function () {
-          win.webContents.send('newProject', '');
-        }
-      },
-      {
-        label: 'Save Project',
-        click: function () {
-          win.webContents.send('saveProject', '');
-        }
-      },
-      {
-        label: 'Save Open File',
-        click: function () {
-          win.webContents.send('saveOpenFile', '');
-        }
-      },
-      {
-        label: 'Debug Action',
-        click: function () {
-          win.webContents.send('debugAction', '');
-        }
-      }
-    ]
-  },
-  {
-    label: 'Data',
-    submenu: [
-      {
-        label: 'Import All',
-        click: function () {
-          win.webContents.send('importAllData', '');
-        }
-      }
-    ]
-  },
-  // { role: 'editMenu' }
-  {
-    label: 'Edit',
-    submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      ...(isMac ? [
-        { role: 'pasteAndMatchStyle' },
-        { role: 'delete' },
-        { role: 'selectAll' },
+  const template = [
+    // { role: 'appMenu' }
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
         { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    // { role: 'fileMenu' }
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' },
         {
-          label: 'Speech',
-          submenu: [
-            { role: 'startspeaking' },
-            { role: 'stopspeaking' }
-          ]
+          label: 'Open Project',
+          click: function () {
+            win.webContents.send('openProject', '');
+          }
+        },
+        {
+          label: 'New Project',
+          click: function () {
+            win.webContents.send('newProject', '');
+          }
+        },
+        {
+          label: 'Save Project',
+          click: function () {
+            win.webContents.send('saveProject', '');
+          }
+        },
+        {
+          label: 'Save Open File',
+          accelerator: 'CmdOrCtrl+S',
+          click: function () {
+            win.webContents.send('saveOpenFile', '');
+          }
+        },
+        {
+          label: 'Debug Action',
+          click: function () {
+            win.webContents.send('debugAction', '');
+          }
         }
-      ] : [
-        { role: 'delete' },
-        { type: 'separator' },
-        { role: 'selectAll' }
-      ])
-    ]
-  },
-  // { role: 'viewMenu' }
-  {
-    label: 'View',
-    submenu: [
-      { role: 'reload' },
-      { role: 'forcereload' },
-      { role: 'toggledevtools' },
-      { type: 'separator' },
-      { role: 'resetzoom' },
-      { role: 'zoomin' },
-      { role: 'zoomout' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
-    ]
-  },
-  // { role: 'windowMenu' }
-  {
-    label: 'Window',
-    submenu: [
-      { role: 'minimize' },
-      { role: 'zoom' },
-      ...(isMac ? [
-        { type: 'separator' },
-        { role: 'front' },
-        { type: 'separator' },
-        { role: 'window' }
-      ] : [
-        { role: 'close' }
-      ])
-    ]
-  },
-  {
-    role: 'help',
-    submenu: [
-      {
-        label: 'Learn More',
-        click: async () => {
-          const { shell } = require('electron')
-          await shell.openExternal('https://electronjs.org')
+      ]
+    },
+    {
+      label: 'Data',
+      submenu: [
+        {
+          label: 'Import All',
+          click: function () {
+            win.webContents.send('importAllData', '');
+          }
         }
-      }
-    ]
-  }
-]
+      ]
+    },
+    // { role: 'editMenu' }
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startspeaking' },
+              { role: 'stopspeaking' }
+            ]
+          }
+        ] : [
+            { role: 'delete' },
+            { type: 'separator' },
+            { role: 'selectAll' }
+          ])
+      ]
+    },
+    // { role: 'viewMenu' }
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forcereload' },
+        { role: 'toggledevtools' },
+        { type: 'separator' },
+        { role: 'resetzoom' },
+        { role: 'zoomin' },
+        { role: 'zoomout' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    // { role: 'windowMenu' }
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+            { role: 'close' }
+          ])
+      ]
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Learn More',
+          click: async () => {
+            const { shell } = require('electron')
+            await shell.openExternal('https://electronjs.org')
+          }
+        }
+      ]
+    }
+  ]
 
-menu = electron.Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)
+  menu = electron.Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
 
 
 
@@ -283,11 +285,13 @@ server = http.createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
   res.end('Goodbye world!\n');
-}); 
+});
 
 const { ipcMain } = require('electron')
+import fs from "fs";
+
 ipcMain.on('asynchronous-message', (event, arg) => {
-  port+=1;
+  port += 1;
   console.log('background.js asynchronous-message', arg);
   //console.log(arg) // prints "ping"
   server.removeAllListeners();
@@ -296,23 +300,75 @@ ipcMain.on('asynchronous-message', (event, arg) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('Goodbye world!\n');
-  }); 
+  });
 
   server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
   });
 
-  win.webContents.send('setIframeURL', 'http://'+hostname+':'+port+'/');
+  win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
   event.reply('asynchronous-reply', server.connections)
 })
 
-ipcMain.on('project-file-opened', (event, arg) => {
-  server = http.createServer((req, res) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('Goodbye world!\n');
-  }); 
+function loadFile(filePath){
+  var output = undefined;
+  output = fs.readFileSync(filePath + '/style.css', "utf8", (err, data) => {
+    if (err) throw err;
+    //console.log(data);
+    output = data;
+  });
+  return output
+}
 
+var rootDirectoryPath = undefined;
+ipcMain.on('project-file-opened', (event, arg) => {
+  port += 1;
+  rootDirectoryPath = arg;
+  server = http.createServer((req, res) => {
+
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
+    var html = createHtmlElement({
+      name: 'head',
+      html: createHtmlElement({
+        name: 'style',
+        html: loadFile(arg)
+      })
+    });
+
+    res.end(html);
+  });
+
+  server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}/`);
+  });
+
+  win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
+
+  console.log(arg) // prints "ping";
+  event.returnValue = arg;
+})
+
+ipcMain.on('piece-preview-opened', (event, arg) => {
+  port += 1;
+  server = http.createServer((req, res) => {
+    var output = "NO DATA READ";
+    output = fs.readFileSync(rootDirectoryPath + '/style.css', "utf8", (err, data) => {
+      if (err) throw err;
+      //console.log(data);
+      output = data;
+    });
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
+    res.end("<head><style>" + output + "</style></head>" + arg);
+  });
+  server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}/`);
+  });
+
+  win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
 
   console.log(arg) // prints "ping";
   event.returnValue = arg;

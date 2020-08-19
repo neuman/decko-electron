@@ -14,14 +14,13 @@
           ></asset-list-item>
         </div>
       </b-col>
-      <b-col cols="9">
+      <b-col cols="9" style="padding:0px;">
         <div class="h-100">
           <div class="h-100" v-if="preview == undefined">
-            <preview-iframe ></preview-iframe>
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
-          <div v-else>
-            <div v-html="preview"></div>
+          <div style="height:100%; width:100%;" v-else>
+            <preview-iframe style="height:100%; width:100%;"></preview-iframe>
           </div>
         </div>
       </b-col>
@@ -39,6 +38,9 @@ const { dialog } = require("electron").remote;
 const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
+import 'codemirror/mode/htmlmixed/htmlmixed.js'
+import 'codemirror/theme/base16-dark.css'
+var path = require('path');
 
 const assetCategories = {
   DIRECTORY: "directory",
@@ -86,7 +88,7 @@ export default {
       cmOptions: {
         // codemirror options
         tabSize: 4,
-        mode: "text/javascript",
+        mode: "htmlmixed",
         theme: "base16-dark",
         lineNumbers: true,
         line: true,
@@ -136,6 +138,7 @@ export default {
         output = data;
       });
       this.Assets = JSON.parse(output);
+      electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {
       fs.readdir(directoryPath, (err, files) => {
@@ -342,7 +345,12 @@ export default {
           "with data ",
           datafileFilePath
         );
-        this.preview = Mustache.render(templateContent, datafileContent[0]);
+        this.preview = "";
+        datafileContent.forEach(element => {
+          this.preview += Mustache.render(templateContent, element);
+        });
+        
+        electron.ipcRenderer.send("piece-preview-opened", this.preview);
         console.log("rendered html", this.preview);
       } else {
         console.log("openFilePathInEditor", match.filePath);
