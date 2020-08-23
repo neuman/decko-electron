@@ -138,6 +138,7 @@ export default {
         output = data;
       });
       this.Assets = JSON.parse(output);
+
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {

@@ -1,10 +1,12 @@
 'use strict'
 
+
 import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const createHtmlElement = require('create-html-element');
+const path = require('path')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -14,6 +16,8 @@ let win
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+
 
 function createWindow() {
   // Create the browser window.
@@ -310,9 +314,9 @@ ipcMain.on('asynchronous-message', (event, arg) => {
   event.reply('asynchronous-reply', server.connections)
 })
 
-function loadFile(filePath){
+function loadFile(filePath) {
   var output = undefined;
-  output = fs.readFileSync(filePath + '/style.css', "utf8", (err, data) => {
+  output = fs.readFileSync(filePath, "utf8", (err, data) => {
     if (err) throw err;
     //console.log(data);
     output = data;
@@ -324,28 +328,6 @@ var rootDirectoryPath = undefined;
 ipcMain.on('project-file-opened', (event, arg) => {
   port += 1;
   rootDirectoryPath = arg;
-  server = http.createServer((req, res) => {
-
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html');
-    var html = createHtmlElement({
-      name: 'head',
-      html: createHtmlElement({
-        name: 'style',
-        html: loadFile(arg)
-      })
-    });
-
-    res.end(html);
-  });
-
-  server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
-  });
-
-  win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
-
   console.log(arg) // prints "ping";
   event.returnValue = arg;
 })
@@ -353,16 +335,29 @@ ipcMain.on('project-file-opened', (event, arg) => {
 ipcMain.on('piece-preview-opened', (event, arg) => {
   port += 1;
   server = http.createServer((req, res) => {
-    var output = "NO DATA READ";
+    /*var output = "NO DATA READ";
     output = fs.readFileSync(rootDirectoryPath + '/style.css', "utf8", (err, data) => {
       if (err) throw err;
       //console.log(data);
       output = data;
-    });
+    });*/
+
+    var html = buildWebPage(
+      [
+        loadFile(rootDirectoryPath + '/style.css')
+      ],
+      [
+        
+        loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
+        loadFile(rootDirectoryPath + '/html2canvas.js'),
+        loadFile(rootDirectoryPath + '/canvas2image.js'),
+        loadFile(rootDirectoryPath + '/export.js'),
+      ],
+      arg);
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-    res.end("<head><style>" + output + "</style></head>" + arg);
+    res.end(html);
   });
   server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
@@ -373,3 +368,38 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
   console.log(arg) // prints "ping";
   event.returnValue = arg;
 })
+
+function buildWebPage(css, scripts, body) {
+  var css_block = "";
+  css.forEach(element => {
+    css_block += createHtmlElement({
+      name: 'style',
+      html: element
+    })
+  });
+
+  var scripts_block = "";
+  scripts.forEach(element => {
+    css_block += createHtmlElement({
+      name: 'script',
+      attributes: {
+        type: 'text/javascript'
+      },
+      html: element
+    })
+  });
+
+
+  var body_block = createHtmlElement({
+    name: 'body',
+    html: body
+  });
+
+  return createHtmlElement({
+    name: 'html',
+    html: createHtmlElement({
+      name: 'body',
+      html: css_block + scripts_block
+    }) + body_block
+  })
+}
