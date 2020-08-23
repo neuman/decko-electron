@@ -334,30 +334,43 @@ ipcMain.on('project-file-opened', (event, arg) => {
 
 ipcMain.on('piece-preview-opened', (event, arg) => {
   port += 1;
-  server = http.createServer((req, res) => {
-    /*var output = "NO DATA READ";
-    output = fs.readFileSync(rootDirectoryPath + '/style.css', "utf8", (err, data) => {
-      if (err) throw err;
-      //console.log(data);
-      output = data;
-    });*/
+  server = http.createServer((request, response) => {
+    if (request.method == 'POST') {
+      console.log('POST',request.url);
+      var body = ''
+      request.on('data', function (data) {
+        body += data
+        //console.log('Partial body: ' + body)
+      })
+      request.on('end', function () {
+        //console.log('Body: ' + body)
+        var decodedBody = decodeURIComponent(body);
+        var base64Data = decodedBody.split(';base64,').pop();
+        //console.log('stripped body:',base64Data);
+        fs.writeFile(rootDirectoryPath+'/'+request.url.split("/").pop()+".png", base64Data, 'base64', function(err) {
+          console.log(err);
+        });
+        response.writeHead(200, { 'Content-Type': 'text/html' })
+        response.end('post received')
+      })
+    } else {
+      console.log('GET')
+      var html = buildWebPage(
+        [
+          loadFile(rootDirectoryPath + '/style.css')
+        ],
+        [
+          loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
+          loadFile(rootDirectoryPath + '/html2canvas.js'),
+          loadFile(rootDirectoryPath + '/canvas2image.js'),
+          loadFile(rootDirectoryPath + '/export.js'),
+        ],
+        arg);
 
-    var html = buildWebPage(
-      [
-        loadFile(rootDirectoryPath + '/style.css')
-      ],
-      [
-        
-        loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
-        loadFile(rootDirectoryPath + '/html2canvas.js'),
-        loadFile(rootDirectoryPath + '/canvas2image.js'),
-        loadFile(rootDirectoryPath + '/export.js'),
-      ],
-      arg);
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html');
-    res.end(html);
+      response.statusCode = 200;
+      response.setHeader('Content-Type', 'text/html');
+      response.end(html);
+    }
   });
   server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
@@ -365,7 +378,7 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
 
   win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
 
-  console.log(arg) // prints "ping";
+  //console.log(arg) // prints "ping";
   event.returnValue = arg;
 })
 

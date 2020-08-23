@@ -350,6 +350,7 @@ export default {
         datafileContent.forEach(element => {
           this.preview += Mustache.render(templateContent, element);
         });
+        //this.preview += Mustache.render(templateContent, datafileContent[0]);
         
         electron.ipcRenderer.send("piece-preview-opened", this.preview);
         console.log("rendered html", this.preview);
