@@ -20,6 +20,7 @@
     "create-html-element": "^3.0.0",
     "emmet": "git+https://github.com/cloud9ide/emmet-core.git#41973fcc70392864c7a469cf5dcd875b88b93d4a",
     "lodash.uniqueid": "^4.0.1",
+    "mime-types": "^2.1.27",
     "mustache": "^4.0.1",
     "portal-vue": "^2.1.7",
     "vue": "^2.6.11",

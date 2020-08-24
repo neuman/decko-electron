@@ -7,6 +7,7 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const createHtmlElement = require('create-html-element');
 const path = require('path')
+var mime = require('mime-types')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -28,7 +29,8 @@ function createWindow() {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      allowRunningInsecureContent: true
     }
   })
 
@@ -336,7 +338,7 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
   port += 1;
   server = http.createServer((request, response) => {
     if (request.method == 'POST') {
-      console.log('POST',request.url);
+      console.log('POST', request.url);
       var body = ''
       request.on('data', function (data) {
         body += data
@@ -347,29 +349,43 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
         var decodedBody = decodeURIComponent(body);
         var base64Data = decodedBody.split(';base64,').pop();
         //console.log('stripped body:',base64Data);
-        fs.writeFile(rootDirectoryPath+'/'+request.url.split("/").pop()+".png", base64Data, 'base64', function(err) {
+        fs.writeFile(rootDirectoryPath + '/' + request.url.split("/").pop() + ".png", base64Data, 'base64', function (err) {
           console.log(err);
         });
         response.writeHead(200, { 'Content-Type': 'text/html' })
         response.end('post received')
       })
     } else {
-      console.log('GET')
-      var html = buildWebPage(
-        [
-          loadFile(rootDirectoryPath + '/style.css')
-        ],
-        [
-          loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
-          loadFile(rootDirectoryPath + '/html2canvas.js'),
-          loadFile(rootDirectoryPath + '/canvas2image.js'),
-          loadFile(rootDirectoryPath + '/export.js'),
-        ],
-        arg);
-
-      response.statusCode = 200;
-      response.setHeader('Content-Type', 'text/html');
-      response.end(html);
+      console.log('GET', request.url)
+      if (request.url == "/") {
+        console.log('got "/" building web page..');
+        var html = buildWebPage(
+          [
+            loadFile(rootDirectoryPath + '/style.css'),
+            loadFile(rootDirectoryPath + '/all.css'),
+            loadFile(rootDirectoryPath + '/custom.css')
+          ],
+          [
+            loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
+            loadFile(rootDirectoryPath + '/html2canvas.js'),
+            loadFile(rootDirectoryPath + '/canvas2image.js'),
+            //loadFile(rootDirectoryPath + '/export.js'),
+          ],
+          arg);
+        response.statusCode = 200;
+        response.setHeader('Content-Type', 'text/html');
+        response.end(html);
+      } else if (request.url.split(".").pop() in ["css","js"] ) {
+        console.log('got filename, looking up...');
+        response.statusCode = 200;
+        console.log('Content-Type', mime.lookup(request.url.split("/").pop()));
+        response.setHeader('Content-Type', mime.lookup(request.url.split("/").pop()));
+        response.end(loadFile(rootDirectoryPath + request.url));
+      } else {
+        response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
+        var stream = fs.createReadStream(rootDirectoryPath + request.url);
+        stream.pipe(response);
+      }
     }
   });
   server.listen(port, hostname, () => {
@@ -408,11 +424,13 @@ function buildWebPage(css, scripts, body) {
     html: body
   });
 
-  return createHtmlElement({
+  var html = createHtmlElement({
     name: 'html',
     html: createHtmlElement({
-      name: 'body',
+      name: 'head',
       html: css_block + scripts_block
     }) + body_block
   })
+
+  return '<!DOCTYPE html>' + html;
 }

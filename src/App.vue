@@ -353,7 +353,7 @@ export default {
         //this.preview += Mustache.render(templateContent, datafileContent[0]);
         
         electron.ipcRenderer.send("piece-preview-opened", this.preview);
-        console.log("rendered html", this.preview);
+        //console.log("rendered html", this.preview);
       } else {
         console.log("openFilePathInEditor", match.filePath);
         this.preview = undefined;
