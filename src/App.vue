@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-100">
     <b-row class="h-100">
-      <b-col cols="3" class="card h-100 overflow-auto">
+      <b-col cols="3" class="card h-100">
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
