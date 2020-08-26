@@ -172,6 +172,24 @@ app.on('ready', async () => {
         }
       ]
     },
+    {
+      label: 'Export',
+      submenu: [
+        {
+          label: 'Export All',
+          enabled:false,
+          click: function () {
+            win.webContents.send('importAllData', '');
+          }
+        },
+        {
+          label: 'Export Open ',
+          click: function () {
+            generateServer(currentArg, true);
+          }
+        }
+      ]
+    },
     // { role: 'editMenu' }
     {
       label: 'Edit',
@@ -334,7 +352,7 @@ ipcMain.on('project-file-opened', (event, arg) => {
   event.returnValue = arg;
 })
 
-ipcMain.on('piece-preview-opened', (event, arg) => {
+function generateServer(arg, doExport){
   port += 1;
   server = http.createServer((request, response) => {
     if (request.method == 'POST') {
@@ -359,18 +377,21 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
       console.log('GET', request.url)
       if (request.url == "/") {
         console.log('got "/" building web page..');
+        var jsFiles = [
+          loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
+          loadFile(rootDirectoryPath + '/html2canvas.js'),
+          loadFile(rootDirectoryPath + '/canvas2image.js'),
+        ];
+        if(doExport){
+          jsFiles.push(loadFile(rootDirectoryPath + '/export.js'))
+        }
         var html = buildWebPage(
           [
             loadFile(rootDirectoryPath + '/style.css'),
             loadFile(rootDirectoryPath + '/all.css'),
             loadFile(rootDirectoryPath + '/custom.css')
           ],
-          [
-            loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
-            loadFile(rootDirectoryPath + '/html2canvas.js'),
-            loadFile(rootDirectoryPath + '/canvas2image.js'),
-            //loadFile(rootDirectoryPath + '/export.js'),
-          ],
+          jsFiles,
           arg);
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html');
@@ -394,6 +415,11 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
 
   win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
 
+}
+var currentArg;
+ipcMain.on('piece-preview-opened', (event, arg) => {
+  currentArg = arg;
+  generateServer(arg, false);
   //console.log(arg) // prints "ping";
   event.returnValue = arg;
 })
