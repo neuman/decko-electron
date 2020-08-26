@@ -127,7 +127,6 @@ app.on('ready', async () => {
     {
       label: 'File',
       submenu: [
-        isMac ? { role: 'close' } : { role: 'quit' },
         {
           label: 'Open Project',
           click: function () {
@@ -146,6 +145,7 @@ app.on('ready', async () => {
             win.webContents.send('saveProject', '');
           }
         },
+        { type: 'separator' },
         {
           label: 'Save Open File',
           accelerator: 'CmdOrCtrl+S',
@@ -153,28 +153,7 @@ app.on('ready', async () => {
             win.webContents.send('saveOpenFile', '');
           }
         },
-        {
-          label: 'Debug Action',
-          click: function () {
-            win.webContents.send('debugAction', '');
-          }
-        }
-      ]
-    },
-    {
-      label: 'Data',
-      submenu: [
-        {
-          label: 'Import All',
-          click: function () {
-            win.webContents.send('importAllData', '');
-          }
-        }
-      ]
-    },
-    {
-      label: 'Export',
-      submenu: [
+        { type: 'separator' },
         {
           label: 'Export All',
           enabled:false,
@@ -185,7 +164,27 @@ app.on('ready', async () => {
         {
           label: 'Export Open ',
           click: function () {
-            generateServer(currentArg, true);
+            //generateServer(currentArg, true);
+            win.webContents.send('exportOpenFile', '');
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Debug Action',
+          click: function () {
+            win.webContents.send('debugAction', '');
+          }
+        },
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Data',
+      submenu: [
+        {
+          label: 'Import All',
+          click: function () {
+            win.webContents.send('importAllData', '');
           }
         }
       ]
@@ -417,9 +416,9 @@ function generateServer(arg, doExport){
 
 }
 var currentArg;
-ipcMain.on('piece-preview-opened', (event, arg) => {
+ipcMain.on('piece-preview-opened', (event, arg, doExport) => {
   currentArg = arg;
-  generateServer(arg, false);
+  generateServer(arg, doExport);
   //console.log(arg) // prints "ping";
   event.returnValue = arg;
 })

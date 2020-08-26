@@ -38,9 +38,9 @@ const { dialog } = require("electron").remote;
 const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
-import 'codemirror/mode/htmlmixed/htmlmixed.js'
-import 'codemirror/theme/base16-dark.css'
-var path = require('path');
+import "codemirror/mode/htmlmixed/htmlmixed.js";
+import "codemirror/theme/base16-dark.css";
+var path = require("path");
 
 const assetCategories = {
   DIRECTORY: "directory",
@@ -73,6 +73,9 @@ export default {
     electron.ipcRenderer.on("importAllData", (event, arg) => {
       this.importAllDataDialog();
     });
+    electron.ipcRenderer.on("exportOpenFile", (event, arg) => {
+      this.exportOpenFile();
+    });
     electron.ipcRenderer.on("debugAction", (event, arg) => {
       this.debugAction();
     });
@@ -102,6 +105,18 @@ export default {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
+    },
+    loadFile(filePath) {
+      var output = undefined;
+      output = fs.readFileSync(filePath, "utf8", (err, data) => {
+        if (err) throw err;
+        //console.log(data);
+        output = data;
+      });
+      return output;
+    },
+    exportOpenFile() {
+      this.assetSelectedForExport(this.selectedPieceId)
     },
     newProjectDialog() {
       dialog
@@ -289,10 +304,16 @@ export default {
       return Object.keys(this).every((key) => input[key] === this[key]);
     },
     searchAssets(query) {
-      return this.Assets.filter(this.search, query);
+      return this.Assets.filter(this.search, query)
     },
     assetSelected(id) {
-      console.log("assetSelected", id);
+      this.assetRender(id, false)
+    },
+    assetSelectedForExport(id) {
+      this.assetRender(id, true)
+    },
+    assetRender(id, doExport) {
+      console.log("assetSelected", id)
       var match = this.Assets.find((obj) => {
         return obj.id === id;
       });
@@ -300,7 +321,7 @@ export default {
       //if it's a file, open it in editor
       if (match.parentId == undefined) {
         //get template and read it
-
+        this.selectedPieceId = match.id;
         //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
         var templateFilePath = undefined;
         this.Assets.forEach((element) => {
@@ -312,34 +333,22 @@ export default {
           }
         });
         console.log("templateFilePath", templateFilePath);
-        var output = "NO DATA READ";
-        output = fs.readFileSync(templateFilePath, "utf8", (err, data) => {
-          if (err) throw err;
-          //console.log(data);
-          output = data;
-        });
-        var templateContent = output;
+        var templateContent = this.loadFile(templateFilePath);
 
         //get datafile filePath
-        var datafileFilePath = undefined;
+        var datafileFilePath = undefined
         this.Assets.forEach((element) => {
           if (
             element.parentId == id &&
             element.category == assetCategories.DATAFILE
           ) {
-            datafileFilePath = element.filePath;
+            datafileFilePath = element.filePath
           }
         });
-        console.log("datafileFilePath", datafileFilePath);
+        console.log("datafileFilePath", datafileFilePath)
 
         //read datafile
-        output = "NO DATA READ";
-        output = fs.readFileSync(datafileFilePath, "utf8", (err, data) => {
-          if (err) throw err;
-          //console.log(data);
-          output = data;
-        });
-        var datafileContent = JSON.parse(output);
+        var datafileContent = JSON.parse(this.loadFile(datafileFilePath))
         console.log(
           "rendering template ",
           templateFilePath,
@@ -347,14 +356,15 @@ export default {
           datafileFilePath
         );
         this.preview = "";
-        datafileContent.forEach(element => {
+        datafileContent.forEach((element) => {
           this.preview += Mustache.render(templateContent, element);
         });
         //this.preview += Mustache.render(templateContent, datafileContent[0]);
-        
-        electron.ipcRenderer.send("piece-preview-opened", this.preview);
+
+        electron.ipcRenderer.send("piece-preview-opened", this.preview, doExport);
         //console.log("rendered html", this.preview);
       } else {
+        this.selectedPieceId = match.parentId;
         console.log("openFilePathInEditor", match.filePath);
         this.preview = undefined;
         this.openFilePathInEditor(match.filePath);
