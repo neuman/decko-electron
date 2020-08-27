@@ -15,15 +15,14 @@
         </div>
       </b-col>
       <b-col cols="9" style="padding:0px;">
-        {{ this.selectedDirectoryListItem }}
-        <div class="h-100">
-          <div class="h-100" v-if="msg != undefined">
+        <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
+          <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
-          <div class="h-100" v-else-if="spreadsheet != undefined">
+          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" ref="deckoTable"></hot-table>
           </div>
-          <div style="height:100%; width:100%;" v-else-if="preview != undefined">
+          <div style="height:100%; width:100%;" v-else-if="this.selectedDirectoryListItem.category == 'directory'">
             <preview-iframe style="height:100%; width:100%;"></preview-iframe>
           </div>
           <div style="height:100%; width:100%;" v-else>No Content</div>
@@ -96,11 +95,7 @@ export default {
       Assets: [],
       msg: undefined,
       preview: undefined,
-      spreadsheet: [
-        ["", "Ford", "Volvo", "Toyota", "Honda"],
-        ["2016", 10, 11, 12, 13],
-        ["2017", 20, 11, 14, 13],
-      ],
+      spreadsheet: undefined,
       hotSettings: {
         licenseKey: "non-commercial-and-evaluation",
         //colHeaders: ["", "Ford", "Volvo", "Toyota", "Honda"],
