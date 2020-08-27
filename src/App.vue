@@ -15,13 +15,18 @@
         </div>
       </b-col>
       <b-col cols="9" style="padding:0px;">
+        {{ this.selectedDirectoryListItem }}
         <div class="h-100">
-          <div class="h-100" v-if="preview == undefined">
+          <div class="h-100" v-if="msg != undefined">
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
-          <div style="height:100%; width:100%;" v-else>
+          <div class="h-100" v-else-if="spreadsheet != undefined">
+            <hot-table :settings="hotSettings" ref="deckoTable"></hot-table>
+          </div>
+          <div style="height:100%; width:100%;" v-else-if="preview != undefined">
             <preview-iframe style="height:100%; width:100%;"></preview-iframe>
           </div>
+          <div style="height:100%; width:100%;" v-else>No Content</div>
         </div>
       </b-col>
     </b-row>
@@ -40,6 +45,8 @@ import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/theme/base16-dark.css";
+import { HotTable } from "@handsontable/vue";
+import Handsontable from "handsontable";
 var path = require("path");
 
 const assetCategories = {
@@ -56,6 +63,7 @@ export default {
     PreviewIframe,
     AssetListItem,
     codemirror,
+    HotTable,
   },
   created: function () {
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -86,8 +94,22 @@ export default {
       selectedDirectoryListItem: undefined,
       openFile: undefined,
       Assets: [],
-      msg: "",
+      msg: undefined,
       preview: undefined,
+      spreadsheet: [
+        ["", "Ford", "Volvo", "Toyota", "Honda"],
+        ["2016", 10, 11, 12, 13],
+        ["2017", 20, 11, 14, 13],
+      ],
+      hotSettings: {
+        licenseKey: "non-commercial-and-evaluation",
+        //colHeaders: ["", "Ford", "Volvo", "Toyota", "Honda"],
+        data: [
+          ["2016", 10, 11, 12, 13],
+          ["2017", 20, 11, 14, 13],
+          ["2018", 30, 15, 12, 13],
+        ],
+      },
       cmOptions: {
         // codemirror options
         tabSize: 4,
@@ -95,7 +117,6 @@ export default {
         theme: "base16-dark",
         lineNumbers: true,
         line: true,
-        // more codemirror options, 更多 codemirror 的高级配置...
       },
     };
   },
@@ -116,7 +137,7 @@ export default {
       return output;
     },
     exportOpenFile() {
-      this.assetSelectedForExport(this.selectedPieceId)
+      this.assetSelectedForExport(this.selectedPieceId);
     },
     newProjectDialog() {
       dialog
@@ -211,6 +232,34 @@ export default {
       console.log(output);
       this.msg = output;
     },
+    jsonArrayTo2D(arrayOfObjects) {
+      let header = [],
+        AoA = [];
+      arrayOfObjects.forEach((obj) => {
+        Object.keys(obj).forEach(
+          (key) => header.includes(key) || header.push(key)
+        );
+        let thisRow = new Array(header.length);
+        header.forEach((col, i) => (thisRow[i] = obj[col] || ""));
+        AoA.push(thisRow);
+      });
+      AoA.unshift(header);
+      return AoA;
+    },
+    openFilePathInSpreadSheet(filePath) {
+      console.log("openFilePathInSpreadSheet", filePath);
+      this.openFile = filePath;
+
+      console.log(filePath);
+      var output = this.loadFile(filePath);
+      console.log(output);
+
+      this.spreadsheet = this.jsonArrayTo2D(JSON.parse(output));
+      if (this.$refs.deckoTable != undefined) {
+        this.$refs.deckoTable.hotInstance.loadData(this.spreadsheet);
+      }
+      console.log(this.spreadsheet);
+    },
     saveOpenFile() {
       fs.writeFileSync(this.openFile, this.msg);
       console.log("File written successfully\n");
@@ -304,19 +353,25 @@ export default {
       return Object.keys(this).every((key) => input[key] === this[key]);
     },
     searchAssets(query) {
-      return this.Assets.filter(this.search, query)
+      return this.Assets.filter(this.search, query);
     },
     assetSelected(id) {
-      this.assetRender(id, false)
+      console.log("assetSelected", id);
+      this.selectedDirectoryListItem = this.getAssetById(id);
+      this.assetRender(id, false);
     },
     assetSelectedForExport(id) {
-      this.assetRender(id, true)
+      this.assetRender(id, true);
     },
-    assetRender(id, doExport) {
-      console.log("assetSelected", id)
+    getAssetById(id) {
       var match = this.Assets.find((obj) => {
         return obj.id === id;
       });
+      return match;
+    },
+    assetRender(id, doExport) {
+      var match = this.getAssetById(id);
+
       //if it's a dir, expand it
       //if it's a file, open it in editor
       if (match.parentId == undefined) {
@@ -336,19 +391,19 @@ export default {
         var templateContent = this.loadFile(templateFilePath);
 
         //get datafile filePath
-        var datafileFilePath = undefined
+        var datafileFilePath = undefined;
         this.Assets.forEach((element) => {
           if (
             element.parentId == id &&
             element.category == assetCategories.DATAFILE
           ) {
-            datafileFilePath = element.filePath
+            datafileFilePath = element.filePath;
           }
         });
-        console.log("datafileFilePath", datafileFilePath)
+        console.log("datafileFilePath", datafileFilePath);
 
         //read datafile
-        var datafileContent = JSON.parse(this.loadFile(datafileFilePath))
+        var datafileContent = JSON.parse(this.loadFile(datafileFilePath));
         console.log(
           "rendering template ",
           templateFilePath,
@@ -361,13 +416,21 @@ export default {
         });
         //this.preview += Mustache.render(templateContent, datafileContent[0]);
 
-        electron.ipcRenderer.send("piece-preview-opened", this.preview, doExport);
+        electron.ipcRenderer.send(
+          "piece-preview-opened",
+          this.preview,
+          doExport
+        );
         //console.log("rendered html", this.preview);
       } else {
         this.selectedPieceId = match.parentId;
-        console.log("openFilePathInEditor", match.filePath);
         this.preview = undefined;
-        this.openFilePathInEditor(match.filePath);
+        if (match.filePath.split(".").pop() == "json") {
+          this.openFilePathInSpreadSheet(match.filePath);
+        } else {
+          console.log("openFilePathInEditor", match.filePath);
+          this.openFilePathInEditor(match.filePath);
+        }
       }
     },
   },
@@ -380,3 +443,5 @@ export default {
   max-height: 100%;
 }
 </style>
+
+<style src="../node_modules/handsontable/dist/handsontable.full.css"></style>
