@@ -129,6 +129,7 @@ app.on('ready', async () => {
       submenu: [
         {
           label: 'Open Project',
+          accelerator: 'CmdOrCtrl+O',
           click: function () {
             win.webContents.send('openProject', '');
           }
@@ -398,9 +399,18 @@ function generateServer(arg, doExport){
         response.setHeader('Content-Type', mime.lookup(request.url.split("/").pop()));
         response.end(loadFile(rootDirectoryPath + request.url));
       } else {
-        response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
-        var stream = fs.createReadStream(rootDirectoryPath + request.url);
-        stream.pipe(response);
+        console.log('got other, looking up...');
+        if (fs.existsSync(rootDirectoryPath + request.url)) {
+          response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
+          //response.end("Test");
+          var stream = fs.createReadStream(rootDirectoryPath + request.url);
+          stream.pipe(response);
+        }
+        else {
+          response.writeHead(404);
+          response.end("File Not Foundzorz");
+        }
+
       }
     }
   });

@@ -45,6 +45,9 @@
 
 <script>
 const Handlebars = require("handlebars");
+var markdown = require('helper-markdown');
+Handlebars.registerHelper('markdown', markdown({}));
+
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
 import PreviewIframe from "./components/PreviewIframe";
@@ -170,6 +173,7 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
+          this.rootDirectoryPath = path.dirname(filePath);
           this.openProjectFile(filePath);
         });
     },
@@ -297,6 +301,7 @@ export default {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
           var jsonData = JSON.parse(this.loadFile(filePath));
+          this.Assets = [];
           for (var attributename in jsonData) {
             var pieceDirectoryPath = this.rootDirectoryPath + "/" + attributename;
             //create Piece in state
@@ -433,7 +438,6 @@ export default {
         datafileContent.forEach((element) => {
           this.preview += template(element);
         });
-        //this.preview += Mustache.render(templateContent, datafileContent[0]);
 
         electron.ipcRenderer.send(
           "piece-preview-opened",
