@@ -73,6 +73,13 @@ const assetCategories = {
   OTHER: "other",
 };
 
+const assetFilenames = {
+  DIRECTORY: "",
+  TEMPLATE: "template.html",
+  STYLESHEET: "stylesheet.css",
+  DATAFILE: "datafile.json",
+};
+
 export default {
   name: "App",
   components: {
@@ -161,6 +168,8 @@ export default {
           var directoryPath = filenames.filePaths[0];
           this.rootDirectoryPath = directoryPath;
           //fs.mkdirSync(directoryPath+"/NewProject");
+          this.saveProject();
+          electron.ipcRenderer.send("project-file-opened", this.rootDirectoryPath);
         });
     },
     openProjectDialog() {
@@ -204,7 +213,7 @@ export default {
       this.DirectoryListItems.push({
         id: uniqueId("directoryListItem-"),
         label: fileName,
-        filePath: directoryPath + "/" + fileName,
+        filePath: path.join(directoryPath, fileName),
         volatile: false,
       });
     },
@@ -219,7 +228,7 @@ export default {
         category: category,
         label: label,
         fileName: fileName,
-        filePath: directoryPath + "/" + fileName,
+        filePath: path.join(directoryPath, fileName),
         active: true,
         singleton: false,
         depth: depth,
@@ -303,13 +312,13 @@ export default {
           var jsonData = JSON.parse(this.loadFile(filePath));
           this.Assets = [];
           for (var attributename in jsonData) {
-            var pieceDirectoryPath = this.rootDirectoryPath + "/" + attributename;
+            var pieceDirectoryPath = path.join(this.rootDirectoryPath, attributename);
             //create Piece in state
             var newPiece = this.addAsset(
               undefined,
               assetCategories.DIRECTORY,
               pieceDirectoryPath,
-              undefined,
+              assetFilenames.DIRECTORY,
               attributename,
               1
             );
@@ -320,8 +329,8 @@ export default {
             }
 
             //make add datafile to piece
-            var newFileName = "data.json";
-            var newFilePath = pieceDirectoryPath + "/" + newFileName;
+            var newFileName = assetFilenames.DATAFILE;
+            var newFilePath = path.join(pieceDirectoryPath, newFileName);
             this.addAsset(
               newPiece,
               assetCategories.DATAFILE,
@@ -336,7 +345,7 @@ export default {
               JSON.stringify(jsonData[attributename], 4, " ")
             );
             //add template to piece
-            newFileName = "template.html";
+            newFileName = assetFilenames.TEMPLATE;
             this.addAsset(
               newPiece,
               assetCategories.TEMPLATE,
@@ -346,13 +355,13 @@ export default {
               2
             );
             //create empty template file
-            newFilePath = pieceDirectoryPath + "/" + newFileName;
+            newFilePath = path.join(pieceDirectoryPath, newFileName);
             if (fs.existsSync(newFilePath) != true) {
               fs.writeFileSync(newFilePath, "");
             }
 
             //add style to piece
-            newFileName = "style.css";
+            newFileName = assetFilenames.STYLESHEET;
             this.addAsset(
               newPiece,
               assetCategories.STYLESHEET,
@@ -362,9 +371,9 @@ export default {
               2
             );
             //create empty css file
-            newFilePath = pieceDirectoryPath + "/" + newFileName;
+            newFilePath = path.join(pieceDirectoryPath, newFileName);
             if (fs.existsSync(newFilePath) != true) {
-              fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
+              fs.writeFileSync(path.join(pieceDirectoryPath, newFileName), "");
             }
           }
           this.saveProject();

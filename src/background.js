@@ -363,7 +363,7 @@ function generateServer(arg, doExport){
         var decodedBody = decodeURIComponent(body);
         var base64Data = decodedBody.split(';base64,').pop();
         //console.log('stripped body:',base64Data);
-        fs.writeFile(rootDirectoryPath + '/' + request.url.split("/").pop() + ".png", base64Data, 'base64', function (err) {
+        fs.writeFile(path.join(rootDirectoryPath, request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
           console.log(err);
         });
         response.writeHead(200, { 'Content-Type': 'text/html' })
@@ -374,18 +374,18 @@ function generateServer(arg, doExport){
       if (request.url == "/") {
         console.log('got "/" building web page..');
         var jsFiles = [
-          loadFile(rootDirectoryPath + '/jquery-3.5.1.min.js'),
-          loadFile(rootDirectoryPath + '/html2canvas.js'),
-          loadFile(rootDirectoryPath + '/canvas2image.js'),
+          loadFile(path.join(rootDirectoryPath, 'jquery-3.5.1.min.js')),
+          loadFile(path.join(rootDirectoryPath, 'html2canvas.js')),
+          loadFile(path.join(rootDirectoryPath, 'canvas2image.js')),
         ];
         if(doExport){
-          jsFiles.push(loadFile(rootDirectoryPath + '/export.js'))
+          jsFiles.push(loadFile(path.join(rootDirectoryPath, 'export.js')))
         }
         var html = buildWebPage(
           [
-            loadFile(rootDirectoryPath + '/style.css'),
-            loadFile(rootDirectoryPath + '/all.css'),
-            loadFile(rootDirectoryPath + '/custom.css')
+            loadFile(path.join(rootDirectoryPath, 'style.css')),
+            loadFile(path.join(rootDirectoryPath, 'all.css')),
+            loadFile(path.join(rootDirectoryPath, 'custom.css'))
           ],
           jsFiles,
           arg);
@@ -397,18 +397,19 @@ function generateServer(arg, doExport){
         response.statusCode = 200;
         console.log('Content-Type', mime.lookup(request.url.split("/").pop()));
         response.setHeader('Content-Type', mime.lookup(request.url.split("/").pop()));
-        response.end(loadFile(rootDirectoryPath + request.url));
+        response.end(loadFile(path.join(rootDirectoryPath, request.url)));
       } else {
         console.log('got other, looking up...');
-        if (fs.existsSync(rootDirectoryPath + request.url)) {
+        console.log(path.join(rootDirectoryPath, request.url));
+        if (fs.existsSync(path.join(rootDirectoryPath, request.url))) {
           response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
           //response.end("Test");
-          var stream = fs.createReadStream(rootDirectoryPath + request.url);
+          var stream = fs.createReadStream(path.join(rootDirectoryPath, request.url));
           stream.pipe(response);
         }
         else {
           response.writeHead(404);
-          response.end("File Not Foundzorz");
+          response.end("File Not Found");
         }
 
       }
