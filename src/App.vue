@@ -80,6 +80,10 @@ const assetFilenames = {
   DATAFILE: "datafile.json",
 };
 
+const staticStrings = {
+  DECKODIRNAME: "decko",
+};
+
 export default {
   name: "App",
   components: {
@@ -169,6 +173,7 @@ export default {
           this.rootDirectoryPath = directoryPath;
           //fs.mkdirSync(directoryPath+"/NewProject");
           this.saveProject();
+          fs.mkdirSync(path.join(this.rootDirectoryPath,staticStrings.DECKODIRNAME));
           electron.ipcRenderer.send("project-file-opened", this.rootDirectoryPath);
         });
     },
@@ -312,7 +317,7 @@ export default {
           var jsonData = JSON.parse(this.loadFile(filePath));
           this.Assets = [];
           for (var attributename in jsonData) {
-            var pieceDirectoryPath = path.join(this.rootDirectoryPath, attributename);
+            var pieceDirectoryPath = path.join(this.rootDirectoryPath, staticStrings.DECKODIRNAME, attributename);
             //create Piece in state
             var newPiece = this.addAsset(
               undefined,
