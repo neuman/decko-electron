@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-100">
-    <b-row class="h-100">
-      <b-col cols="3" class="card h-100">
+    <splitpanes class="default-theme">
+      <pane size="15" class="bg-dark overflow-y-handled" >
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
@@ -13,8 +13,16 @@
             @asset-selected="assetSelected"
           ></asset-list-item>
         </div>
-      </b-col>
-      <b-col cols="9" style="padding:0px;">
+      </pane>
+      <pane class="bg-dark">
+        <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
+          <div class="d-block text-center">
+            <p
+              class="my-4"
+            >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
+          </div>
+        </b-modal>
+
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
           <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
@@ -22,18 +30,21 @@
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" ref="deckoTable"></hot-table>
           </div>
-          <div style="height:100%; width:100%;" v-else-if="this.selectedDirectoryListItem.category == 'directory'">
+          <div
+            style="height:100%; width:100%;"
+            v-else-if="this.selectedDirectoryListItem.category == 'directory'"
+          >
             <preview-iframe style="height:100%; width:100%;"></preview-iframe>
           </div>
           <div style="height:100%; width:100%;" v-else>No Content</div>
         </div>
-      </b-col>
-    </b-row>
+      </pane>
+    </splitpanes>
   </div>
 </template>
 
 <script>
-import Mustache from "mustache";
+const Handlebars = require("handlebars");
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
 import PreviewIframe from "./components/PreviewIframe";
@@ -43,9 +54,12 @@ const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
-import "codemirror/theme/base16-dark.css";
+import "codemirror/theme/tomorrow-night-eighties.css";
 import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
+import { Splitpanes, Pane } from "splitpanes";
+import "splitpanes/dist/splitpanes.css";
+var MarkdownIt = require('markdown-it');
 var path = require("path");
 
 const assetCategories = {
@@ -63,6 +77,8 @@ export default {
     AssetListItem,
     codemirror,
     HotTable,
+    Splitpanes,
+    Pane,
   },
   created: function () {
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -78,7 +94,7 @@ export default {
       this.saveOpenFile();
     });
     electron.ipcRenderer.on("importAllData", (event, arg) => {
-      this.importAllDataDialog();
+      this.showImportAllWarning();
     });
     electron.ipcRenderer.on("exportOpenFile", (event, arg) => {
       this.exportOpenFile();
@@ -99,17 +115,12 @@ export default {
       hotSettings: {
         licenseKey: "non-commercial-and-evaluation",
         //colHeaders: ["", "Ford", "Volvo", "Toyota", "Honda"],
-        data: [
-          ["2016", 10, 11, 12, 13],
-          ["2017", 20, 11, 14, 13],
-          ["2018", 30, 15, 12, 13],
-        ],
       },
       cmOptions: {
         // codemirror options
         tabSize: 4,
         mode: "htmlmixed",
-        theme: "base16-dark",
+        theme: "tomorrow-night-eighties",
         lineNumbers: true,
         line: true,
       },
@@ -117,6 +128,7 @@ export default {
   },
   methods: {
     debugAction() {
+      this.showImportAllWarning();
       electron.ipcRenderer.on("asynchronous-reply", (event, arg) => {
         console.log(arg); // prints "pong"
       });
@@ -224,7 +236,7 @@ export default {
         output = data;
       });
 
-      console.log(output);
+      //console.log(output);
       this.msg = output;
     },
     jsonArrayTo2D(arrayOfObjects) {
@@ -247,7 +259,7 @@ export default {
 
       console.log(filePath);
       var output = this.loadFile(filePath);
-      console.log(output);
+      //console.log(output);
 
       this.spreadsheet = this.jsonArrayTo2D(JSON.parse(output));
       if (this.$refs.deckoTable != undefined) {
@@ -266,6 +278,14 @@ export default {
       );
       console.log("File written successfully\n");
     },
+    showImportAllWarning() {
+      console.log(this.Assets)
+      if (this.Assets.length > 0) {
+        this.$refs["my-modal"].show();
+      }else{
+        this.importAllDataDialog();
+      }
+    },
     importAllDataDialog() {
       dialog
         .showOpenDialog({
@@ -276,16 +296,9 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
-          var output = "NO DATA READ";
-          output = fs.readFileSync(filePath, "utf8", (err, data) => {
-            if (err) throw err;
-            //console.log(data);
-            output = data;
-          });
-          var jsonData = JSON.parse(output);
+          var jsonData = JSON.parse(this.loadFile(filePath));
           for (var attributename in jsonData) {
-            var pieceDirectoryPath =
-              this.rootDirectoryPath + "/" + attributename;
+            var pieceDirectoryPath = this.rootDirectoryPath + "/" + attributename;
             //create Piece in state
             var newPiece = this.addAsset(
               undefined,
@@ -295,12 +308,15 @@ export default {
               attributename,
               1
             );
-            //create folder for piece
+            //create folder for piece if it doesn't exist
             console.log(pieceDirectoryPath);
-            fs.mkdirSync(pieceDirectoryPath);
+            if (fs.existsSync(pieceDirectoryPath) != true) {
+              fs.mkdirSync(pieceDirectoryPath);
+            }
 
             //make add datafile to piece
             var newFileName = "data.json";
+            var newFilePath = pieceDirectoryPath + "/" + newFileName;
             this.addAsset(
               newPiece,
               assetCategories.DATAFILE,
@@ -311,7 +327,7 @@ export default {
             );
             //create data.json file
             fs.writeFileSync(
-              pieceDirectoryPath + "/data.json",
+              newFilePath,
               JSON.stringify(jsonData[attributename], 4, " ")
             );
             //add template to piece
@@ -325,7 +341,10 @@ export default {
               2
             );
             //create empty template file
-            fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
+            newFilePath = pieceDirectoryPath + "/" + newFileName;
+            if (fs.existsSync(newFilePath) != true) {
+              fs.writeFileSync(newFilePath, "");
+            }
 
             //add style to piece
             newFileName = "style.css";
@@ -338,7 +357,10 @@ export default {
               2
             );
             //create empty css file
-            fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
+            newFilePath = pieceDirectoryPath + "/" + newFileName;
+            if (fs.existsSync(newFilePath) != true) {
+              fs.writeFileSync(pieceDirectoryPath + "/" + newFileName, "");
+            }
           }
           this.saveProject();
           console.log(this.Assets);
@@ -406,8 +428,10 @@ export default {
           datafileFilePath
         );
         this.preview = "";
+        console.log('templateContent', templateContent)
+        var template = Handlebars.compile(templateContent);
         datafileContent.forEach((element) => {
-          this.preview += Mustache.render(templateContent, element);
+          this.preview += template(element);
         });
         //this.preview += Mustache.render(templateContent, datafileContent[0]);
 
@@ -440,3 +464,4 @@ export default {
 </style>
 
 <style src="../node_modules/handsontable/dist/handsontable.full.css"></style>
+

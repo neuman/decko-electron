@@ -147,6 +147,13 @@ app.on('ready', async () => {
         },
         { type: 'separator' },
         {
+          label: 'Import All',
+          click: function () {
+            win.webContents.send('importAllData', '');
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'Save Open File',
           accelerator: 'CmdOrCtrl+S',
           click: function () {
@@ -155,14 +162,14 @@ app.on('ready', async () => {
         },
         { type: 'separator' },
         {
-          label: 'Export All',
+          label: 'Export All Pieces',
           enabled:false,
           click: function () {
             win.webContents.send('importAllData', '');
           }
         },
         {
-          label: 'Export Open ',
+          label: 'Export Piece ',
           click: function () {
             //generateServer(currentArg, true);
             win.webContents.send('exportOpenFile', '');
@@ -176,17 +183,6 @@ app.on('ready', async () => {
           }
         },
         isMac ? { role: 'close' } : { role: 'quit' }
-      ]
-    },
-    {
-      label: 'Data',
-      submenu: [
-        {
-          label: 'Import All',
-          click: function () {
-            win.webContents.send('importAllData', '');
-          }
-        }
       ]
     },
     // { role: 'editMenu' }

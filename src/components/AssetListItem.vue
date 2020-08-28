@@ -1,6 +1,5 @@
 <template>
   <div v-on:click="isClicked">
-
       <div class="text-nowrap" v-bind:style="{ 'padding-left': myIndentString+'px'}" :for="id">{{label}}</div>
   </div>
 </template>
