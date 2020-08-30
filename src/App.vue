@@ -196,13 +196,14 @@ export default {
         });
     },
     openProjectFile(filePath) {
-      var output = "NO DATA READ";
-      output = fs.readFileSync(path.join(this.rootDirectoryPath, filePath), "utf8", (err, data) => {
-        if (err) throw err;
-        //console.log(data);
-        output = data;
-      });
-      this.Assets = JSON.parse(output);
+      this.Assets = JSON.parse(this.loadFile(filePath, true));
+      //if this is a different os, adjust the paths
+      if (this.sep != path.sep){
+        this.Assets.forEach((element) => {
+          element.filePath = element.filePath.split(element.sep).join(path.sep);
+          element.sep = path.sep;
+        });
+      }
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
@@ -238,6 +239,7 @@ export default {
         label: label,
         fileName: fileName,
         filePath: path.join(directoryPath, fileName),
+        sep: path.sep,
         active: true,
         singleton: false,
         depth: depth,

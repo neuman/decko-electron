@@ -401,7 +401,7 @@ function generateServer(arg, doExport){
       } else {
         console.log('got other, looking up...');
         console.log(path.join(rootDirectoryPath, request.url));
-        if (fs.existsSync(path.join(rootDirectoryPath, request.url))) {
+        if ((fs.existsSync(path.join(rootDirectoryPath, request.url))) && (fs.lstatSync(path.join(rootDirectoryPath, request.url)).isDirectory() != true)) {
           response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
           //response.end("Test");
           var stream = fs.createReadStream(path.join(rootDirectoryPath, request.url));
