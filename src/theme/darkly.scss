@@ -11022,7 +11022,7 @@ $bv-enable-table-stacked: false;
     width: 7px;
     border-left: 1px solid #202021;
     margin-left: -1px;
-    background-color:#202021;
+    background-color:#181818;
 }
 
 .CodeMirror{
@@ -11048,11 +11048,13 @@ $bv-enable-table-stacked: false;
 /* Track */
 ::-webkit-scrollbar-track {
   background: #202021;
+  padding:0px;
 }
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
   background: #404040;
+  width: 30px;
 }
 
 /* Handle on hover */
