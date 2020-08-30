@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-100">
     <splitpanes class="default-theme">
-      <pane size="15" class="bg-dark overflow-y-handled">
+      <pane size="15" class="bg-light overflow-y-handled">
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
@@ -57,7 +57,7 @@ const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
-import "codemirror/theme/tomorrow-night-eighties.css";
+import "./theme/decko_codemirror.css";
 import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
