@@ -136,6 +136,7 @@ app.on('ready', async () => {
         },
         {
           label: 'New Project',
+          accelerator: 'CmdOrCtrl+M',
           click: function () {
             win.webContents.send('newProject', '');
           }
@@ -149,6 +150,7 @@ app.on('ready', async () => {
         { type: 'separator' },
         {
           label: 'Import All',
+          accelerator: 'CmdOrCtrl+I',
           click: function () {
             win.webContents.send('importAllData', '');
           }

@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-100">
     <splitpanes class="default-theme">
-      <pane size="15" class="bg-dark overflow-y-handled" >
+      <pane size="15" class="bg-dark overflow-y-handled">
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
@@ -45,8 +45,8 @@
 
 <script>
 const Handlebars = require("handlebars");
-var markdown = require('helper-markdown');
-Handlebars.registerHelper('markdown', markdown({}));
+var markdown = require("helper-markdown");
+Handlebars.registerHelper("markdown", markdown({}));
 
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
@@ -62,7 +62,8 @@ import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
-var MarkdownIt = require('markdown-it');
+const createHtmlElement = require("create-html-element");
+var MarkdownIt = require("markdown-it");
 var path = require("path");
 
 const assetCategories = {
@@ -150,7 +151,7 @@ export default {
     },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
-      if(absoloute != true){
+      if (absoloute != true) {
         myPath = path.join(this.rootDirectoryPath, filePath);
       }
       var output = undefined;
@@ -177,8 +178,13 @@ export default {
           this.rootDirectoryPath = directoryPath;
           //fs.mkdirSync(directoryPath+"/NewProject");
           this.saveProject();
-          fs.mkdirSync(path.join(this.rootDirectoryPath,staticStrings.DECKODIRNAME));
-          electron.ipcRenderer.send("project-file-opened", this.rootDirectoryPath);
+          fs.mkdirSync(
+            path.join(this.rootDirectoryPath, staticStrings.DECKODIRNAME)
+          );
+          electron.ipcRenderer.send(
+            "project-file-opened",
+            this.rootDirectoryPath
+          );
         });
     },
     openProjectDialog() {
@@ -198,7 +204,7 @@ export default {
     openProjectFile(filePath) {
       this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
-      if (this.sep != path.sep){
+      if (this.sep != path.sep) {
         this.Assets.forEach((element) => {
           element.filePath = element.filePath.split(element.sep).join(path.sep);
           element.sep = path.sep;
@@ -248,15 +254,22 @@ export default {
       return output;
     },
     openFilePathInEditor(filePath) {
-      console.log("openFilePathInEditor", path.join(this.rootDirectoryPath, filePath));
+      console.log(
+        "openFilePathInEditor",
+        path.join(this.rootDirectoryPath, filePath)
+      );
       this.msg = filePath;
       this.openFile = filePath;
       var output = "NO DATA READ";
-      output = fs.readFileSync(path.join(this.rootDirectoryPath, filePath), "utf8", (err, data) => {
-        if (err) throw err;
-        //console.log(data);
-        output = data;
-      });
+      output = fs.readFileSync(
+        path.join(this.rootDirectoryPath, filePath),
+        "utf8",
+        (err, data) => {
+          if (err) throw err;
+          //console.log(data);
+          output = data;
+        }
+      );
 
       //console.log(output);
       this.msg = output;
@@ -290,7 +303,10 @@ export default {
       console.log(this.spreadsheet);
     },
     saveOpenFile() {
-      fs.writeFileSync(path.join(this.rootDirectoryPath, this.openFile), this.msg);
+      fs.writeFileSync(
+        path.join(this.rootDirectoryPath, this.openFile),
+        this.msg
+      );
       console.log("File written successfully\n");
     },
     saveProject() {
@@ -301,12 +317,21 @@ export default {
       console.log("File written successfully\n");
     },
     showImportAllWarning() {
-      console.log(this.Assets)
+      console.log(this.Assets);
       if (this.Assets.length > 0) {
         this.$refs["my-modal"].show();
-      }else{
+      } else {
         this.importAllDataDialog();
       }
+    },
+    buildPieceFromData(pieceData) {
+      var block = "";
+      var p = pieceData[0];
+      for (var key in p) {
+          console.log(key + " -> " + p[key]);
+          block += "\t<p>\n\t\t<span class='badge badge-primary'>"+key+"</span>{{ "+key+" }}\n\t</p>\n";
+      }
+      return "<div class='card' style='width:2.5in; height:3.5in;'>\n"+block+"\n</div>"
     },
     importAllDataDialog() {
       dialog
@@ -321,7 +346,10 @@ export default {
           var jsonData = JSON.parse(this.loadFile(filePath, true));
           this.Assets = [];
           for (var attributename in jsonData) {
-            var pieceDirectoryPath = path.join(staticStrings.DECKODIRNAME, attributename);
+            var pieceDirectoryPath = path.join(
+              staticStrings.DECKODIRNAME,
+              attributename
+            );
             //create Piece in state
             var newPiece = this.addAsset(
               undefined,
@@ -333,8 +361,14 @@ export default {
             );
             //create folder for piece if it doesn't exist
             console.log(pieceDirectoryPath);
-            if (fs.existsSync(path.join(this.rootDirectoryPath,pieceDirectoryPath)) != true) {
-              fs.mkdirSync(path.join(this.rootDirectoryPath,pieceDirectoryPath));
+            if (
+              fs.existsSync(
+                path.join(this.rootDirectoryPath, pieceDirectoryPath)
+              ) != true
+            ) {
+              fs.mkdirSync(
+                path.join(this.rootDirectoryPath, pieceDirectoryPath)
+              );
             }
 
             //make add datafile to piece
@@ -364,9 +398,13 @@ export default {
               2
             );
             //create empty template file
-            newFilePath = path.join(this.rootDirectoryPath, pieceDirectoryPath, newFileName);
+            newFilePath = path.join(
+              this.rootDirectoryPath,
+              pieceDirectoryPath,
+              newFileName
+            );
             if (fs.existsSync(newFilePath) != true) {
-              fs.writeFileSync(newFilePath, "");
+              fs.writeFileSync(newFilePath, this.buildPieceFromData(jsonData[attributename]));
             }
 
             //add style to piece
@@ -380,7 +418,11 @@ export default {
               2
             );
             //create empty css file
-            newFilePath = path.join(this.rootDirectoryPath, pieceDirectoryPath, newFileName);
+            newFilePath = path.join(
+              this.rootDirectoryPath,
+              pieceDirectoryPath,
+              newFileName
+            );
             if (fs.existsSync(newFilePath) != true) {
               fs.writeFileSync(newFilePath, "");
             }
@@ -451,7 +493,7 @@ export default {
           datafileFilePath
         );
         this.preview = "";
-        console.log('templateContent', templateContent)
+        console.log("templateContent", templateContent);
         var template = Handlebars.compile(templateContent);
         datafileContent.forEach((element) => {
           this.preview += template(element);
