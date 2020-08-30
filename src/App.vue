@@ -148,9 +148,13 @@ export default {
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
     },
-    loadFile(filePath) {
+    loadFile(filePath, absoloute) {
+      var myPath = filePath;
+      if(absoloute != true){
+        myPath = path.join(this.rootDirectoryPath, filePath);
+      }
       var output = undefined;
-      output = fs.readFileSync(filePath, "utf8", (err, data) => {
+      output = fs.readFileSync(myPath, "utf8", (err, data) => {
         if (err) throw err;
         //console.log(data);
         output = data;
@@ -193,7 +197,7 @@ export default {
     },
     openProjectFile(filePath) {
       var output = "NO DATA READ";
-      output = fs.readFileSync(filePath, "utf8", (err, data) => {
+      output = fs.readFileSync(path.join(this.rootDirectoryPath, filePath), "utf8", (err, data) => {
         if (err) throw err;
         //console.log(data);
         output = data;
@@ -202,7 +206,7 @@ export default {
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
-    openProjectDirectory(directoryPath) {
+    /*openProjectDirectory(directoryPath) {
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
@@ -213,7 +217,7 @@ export default {
           });
         }
       });
-    },
+    },*/
     addDirectoryListItem(directoryPath, fileName) {
       this.DirectoryListItems.push({
         id: uniqueId("directoryListItem-"),
@@ -242,13 +246,11 @@ export default {
       return output;
     },
     openFilePathInEditor(filePath) {
-      console.log("openFilePathInEditor", filePath);
+      console.log("openFilePathInEditor", path.join(this.rootDirectoryPath, filePath));
       this.msg = filePath;
       this.openFile = filePath;
-
-      console.log(filePath);
       var output = "NO DATA READ";
-      output = fs.readFileSync(filePath, "utf8", (err, data) => {
+      output = fs.readFileSync(path.join(this.rootDirectoryPath, filePath), "utf8", (err, data) => {
         if (err) throw err;
         //console.log(data);
         output = data;
@@ -286,12 +288,12 @@ export default {
       console.log(this.spreadsheet);
     },
     saveOpenFile() {
-      fs.writeFileSync(this.openFile, this.msg);
+      fs.writeFileSync(path.join(this.rootDirectoryPath, this.openFile), this.msg);
       console.log("File written successfully\n");
     },
     saveProject() {
       fs.writeFileSync(
-        this.rootDirectoryPath + "/project.dko",
+        path.join(this.rootDirectoryPath, "project.dko"),
         JSON.stringify(this.Assets, 4, " ")
       );
       console.log("File written successfully\n");
@@ -314,10 +316,10 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
-          var jsonData = JSON.parse(this.loadFile(filePath));
+          var jsonData = JSON.parse(this.loadFile(filePath, true));
           this.Assets = [];
           for (var attributename in jsonData) {
-            var pieceDirectoryPath = path.join(this.rootDirectoryPath, staticStrings.DECKODIRNAME, attributename);
+            var pieceDirectoryPath = path.join(staticStrings.DECKODIRNAME, attributename);
             //create Piece in state
             var newPiece = this.addAsset(
               undefined,
@@ -329,8 +331,8 @@ export default {
             );
             //create folder for piece if it doesn't exist
             console.log(pieceDirectoryPath);
-            if (fs.existsSync(pieceDirectoryPath) != true) {
-              fs.mkdirSync(pieceDirectoryPath);
+            if (fs.existsSync(path.join(this.rootDirectoryPath,pieceDirectoryPath)) != true) {
+              fs.mkdirSync(path.join(this.rootDirectoryPath,pieceDirectoryPath));
             }
 
             //make add datafile to piece
@@ -346,7 +348,7 @@ export default {
             );
             //create data.json file
             fs.writeFileSync(
-              newFilePath,
+              path.join(this.rootDirectoryPath, newFilePath),
               JSON.stringify(jsonData[attributename], 4, " ")
             );
             //add template to piece
@@ -360,7 +362,7 @@ export default {
               2
             );
             //create empty template file
-            newFilePath = path.join(pieceDirectoryPath, newFileName);
+            newFilePath = path.join(this.rootDirectoryPath, pieceDirectoryPath, newFileName);
             if (fs.existsSync(newFilePath) != true) {
               fs.writeFileSync(newFilePath, "");
             }
@@ -376,9 +378,9 @@ export default {
               2
             );
             //create empty css file
-            newFilePath = path.join(pieceDirectoryPath, newFileName);
+            newFilePath = path.join(this.rootDirectoryPath, pieceDirectoryPath, newFileName);
             if (fs.existsSync(newFilePath) != true) {
-              fs.writeFileSync(path.join(pieceDirectoryPath, newFileName), "");
+              fs.writeFileSync(newFilePath, "");
             }
           }
           this.saveProject();
