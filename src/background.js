@@ -221,6 +221,12 @@ app.on('ready', async () => {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Magnetize',
+          click: function () {
+            win.webContents.send('magnetizeOpenFile', '');
+          }
+        },
         { role: 'reload' },
         { role: 'forcereload' },
         { role: 'toggledevtools' },
@@ -350,7 +356,7 @@ ipcMain.on('project-file-opened', (event, arg) => {
   event.returnValue = arg;
 })
 
-function generateServer(arg, doExport){
+function generateServer(arg){
   port += 1;
   server = http.createServer((request, response) => {
     if (request.method == 'POST') {
@@ -380,9 +386,8 @@ function generateServer(arg, doExport){
           loadFile(path.join(rootDirectoryPath, 'html2canvas.js')),
           loadFile(path.join(rootDirectoryPath, 'canvas2image.js')),
         ];
-        if(doExport){
-          jsFiles.push(loadFile(path.join(rootDirectoryPath, 'export.js')))
-        }
+        jsFiles.push("var arg = "+JSON.stringify(arg));
+          jsFiles.push(loadFile(path.join(rootDirectoryPath, 'export.js')));
         var html = buildWebPage(
           [
             loadFile(path.join(rootDirectoryPath, 'style.css')),
@@ -390,7 +395,7 @@ function generateServer(arg, doExport){
             loadFile(path.join(rootDirectoryPath, 'custom.css'))
           ],
           jsFiles,
-          arg);
+          arg.html);
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html');
         response.end(html);
@@ -424,10 +429,10 @@ function generateServer(arg, doExport){
   win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
 
 }
-var currentArg;
-ipcMain.on('piece-preview-opened', (event, arg, doExport) => {
-  currentArg = arg;
-  generateServer(arg, doExport);
+//var currentArg;
+ipcMain.on('piece-preview-opened', (event, arg) => {
+  //currentArg = arg;
+  generateServer(arg);
   //console.log(arg) // prints "ping";
   event.returnValue = arg;
 })

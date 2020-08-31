@@ -28,13 +28,13 @@
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
-            <hot-table :settings="hotSettings" ref="deckoTable"></hot-table>
+            <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
           </div>
           <div
             style="height:100%; width:100%;"
             v-else-if="this.selectedDirectoryListItem.category == 'directory'"
           >
-            <preview-iframe style="height:100%; width:100%;"></preview-iframe>
+            <preview-iframe style="height:100%; width:100%; border:none;"></preview-iframe>
           </div>
           <div style="height:100%; width:100%;" v-else>No Content</div>
         </div>
@@ -42,8 +42,9 @@
     </splitpanes>
   </div>
 </template>
-
+1
 <script>
+
 const Handlebars = require("handlebars");
 var markdown = require("helper-markdown");
 Handlebars.registerHelper("markdown", markdown({}));
@@ -114,6 +115,9 @@ export default {
     electron.ipcRenderer.on("exportOpenFile", (event, arg) => {
       this.exportOpenFile();
     });
+    electron.ipcRenderer.on("magnetizeOpenFile", (event, arg) => {
+      this.magnetizeOpenFile();
+    });
     electron.ipcRenderer.on("debugAction", (event, arg) => {
       this.debugAction();
     });
@@ -125,10 +129,10 @@ export default {
       openFile: undefined,
       Assets: [],
       msg: undefined,
-      preview: undefined,
       spreadsheet: undefined,
       hotSettings: {
         licenseKey: "non-commercial-and-evaluation",
+        ManualColumnResize: true,
         //colHeaders: ["", "Ford", "Volvo", "Toyota", "Honda"],
       },
       cmOptions: {
@@ -139,6 +143,11 @@ export default {
         lineNumbers: true,
         line: true,
       },
+      previewOptions:{
+        doExport:false,
+        doMagnetize:false,
+        html:undefined,
+      }
     };
   },
   methods: {
@@ -163,7 +172,13 @@ export default {
       return output;
     },
     exportOpenFile() {
-      this.assetSelectedForExport(this.selectedPieceId);
+      this.previewOptions.doExport = true;
+      this.assetSelected(this.selectedPieceId, this.previewOptions);
+      this.previewOptions.doExport = false;
+    },
+    magnetizeOpenFile() {
+      this.previewOptions.doMagnetize = !this.previewOptions.doMagnetize;
+      this.assetSelected(this.selectedPieceId, this.previewOptions);
     },
     newProjectDialog() {
       dialog
@@ -299,6 +314,9 @@ export default {
       this.spreadsheet = this.jsonArrayTo2D(JSON.parse(output));
       if (this.$refs.deckoTable != undefined) {
         this.$refs.deckoTable.hotInstance.loadData(this.spreadsheet);
+        this.$refs.deckoTable.hotInstance.updateSettings({
+          colHeaders:true
+        })
       }
       console.log(this.spreadsheet);
     },
@@ -442,16 +460,13 @@ export default {
       this.selectedDirectoryListItem = this.getAssetById(id);
       this.assetRender(id, false);
     },
-    assetSelectedForExport(id) {
-      this.assetRender(id, true);
-    },
     getAssetById(id) {
       var match = this.Assets.find((obj) => {
         return obj.id === id;
       });
       return match;
     },
-    assetRender(id, doExport) {
+    assetRender(id, arg) {
       var match = this.getAssetById(id);
 
       //if it's a dir, expand it
@@ -492,22 +507,20 @@ export default {
           "with data ",
           datafileFilePath
         );
-        this.preview = "";
+        this.previewOptions.html = "";
         console.log("templateContent", templateContent);
         var template = Handlebars.compile(templateContent);
         datafileContent.forEach((element) => {
-          this.preview += template(element);
+          this.previewOptions.html += template(element);
         });
-
         electron.ipcRenderer.send(
           "piece-preview-opened",
-          this.preview,
-          doExport
+          this.previewOptions
         );
         //console.log("rendered html", this.preview);
       } else {
         this.selectedPieceId = match.parentId;
-        this.preview = undefined;
+        this.previewOptions.html = undefined;
         if (match.filePath.split(".").pop() == "json") {
           this.openFilePathInSpreadSheet(match.filePath);
         } else {
