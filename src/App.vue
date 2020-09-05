@@ -44,7 +44,6 @@
 </template>
 1
 <script>
-
 const Handlebars = require("handlebars");
 var markdown = require("helper-markdown");
 Handlebars.registerHelper("markdown", markdown({}));
@@ -58,6 +57,7 @@ const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
+import "codemirror/addon/edit/matchtags.js";
 import "./theme/decko_codemirror.css";
 import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
@@ -66,6 +66,7 @@ import "splitpanes/dist/splitpanes.css";
 const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
+var chokidar = require("chokidar");
 
 const assetCategories = {
   DIRECTORY: "directory",
@@ -142,21 +143,28 @@ export default {
         theme: "tomorrow-night-eighties",
         lineNumbers: true,
         line: true,
+        matchTags: { bothTags: true },
       },
-      previewOptions:{
-        doExport:false,
-        doMagnetize:false,
-        html:undefined,
-      }
+      previewOptions: {
+        doExport: false,
+        doMagnetize: false,
+        html: undefined,
+      },
     };
   },
   methods: {
     debugAction() {
-      this.showImportAllWarning();
+      console.log("global.__static", global.__static);
+      console.log(
+        this.loadFile(path.join(global.__static, "public", "milkcrate.js"))
+      );
       electron.ipcRenderer.on("asynchronous-reply", (event, arg) => {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
+    },
+    handleFileChange(filePath){
+      console.log("fileChange", filePath);
     },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
@@ -225,6 +233,35 @@ export default {
           element.sep = path.sep;
         });
       }
+
+      var watcher = chokidar.watch(path.dirname(filePath), {
+        ignored: /^\./,
+        persistent: true,
+      });
+
+      var tempThis = this;
+
+      watcher
+        .on("add", function (pathIn) {
+          console.log("File", pathIn, "has been added");
+        })
+        .on("change", function (pathIn) {
+          console.log("File", pathIn, "has been changed");
+          console.log("tempThis", tempThis);
+          tempThis.handleFileChange(pathIn);
+          if (
+            tempThis.selectedDirectoryListItem.category == assetCategories.DIRECTORY
+          ) {
+            console.log("CSS", pathIn, "has been changed");
+            tempThis.assetRender(tempThis.selectedDirectoryListItem.id, false);
+          }
+        })
+        .on("unlink", function (pathIn) {
+          console.log("File", pathIn, "has been removed");
+        })
+        .on("error", function (error) {
+          console.error("Error happened", error);
+        });
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
@@ -315,8 +352,8 @@ export default {
       if (this.$refs.deckoTable != undefined) {
         this.$refs.deckoTable.hotInstance.loadData(this.spreadsheet);
         this.$refs.deckoTable.hotInstance.updateSettings({
-          colHeaders:true
-        })
+          colHeaders: true,
+        });
       }
       console.log(this.spreadsheet);
     },
@@ -346,10 +383,19 @@ export default {
       var block = "";
       var p = pieceData[0];
       for (var key in p) {
-          console.log(key + " -> " + p[key]);
-          block += "\t<p>\n\t\t<span class='badge badge-primary'>"+key+"</span>{{ "+key+" }}\n\t</p>\n";
+        console.log(key + " -> " + p[key]);
+        block +=
+          "\t<p>\n\t\t<span class='badge badge-primary'>" +
+          key +
+          "</span>{{ " +
+          key +
+          " }}\n\t</p>\n";
       }
-      return "<div class='card' style='width:2.5in; height:3.5in;'>\n"+block+"\n</div>"
+      return (
+        "<div class='card' style='width:2.5in; height:3.5in;'>\n" +
+        block +
+        "\n</div>"
+      );
     },
     importAllDataDialog() {
       dialog
@@ -422,7 +468,10 @@ export default {
               newFileName
             );
             if (fs.existsSync(newFilePath) != true) {
-              fs.writeFileSync(newFilePath, this.buildPieceFromData(jsonData[attributename]));
+              fs.writeFileSync(
+                newFilePath,
+                this.buildPieceFromData(jsonData[attributename])
+              );
             }
 
             //add style to piece
@@ -458,6 +507,7 @@ export default {
     assetSelected(id) {
       console.log("assetSelected", id);
       this.selectedDirectoryListItem = this.getAssetById(id);
+                console.log("this.selectedDirectoryListItem", this.selectedDirectoryListItem)
       this.assetRender(id, false);
     },
     getAssetById(id) {
@@ -508,15 +558,12 @@ export default {
           datafileFilePath
         );
         this.previewOptions.html = "";
-        console.log("templateContent", templateContent);
+        //console.log("templateContent", templateContent);
         var template = Handlebars.compile(templateContent);
         datafileContent.forEach((element) => {
           this.previewOptions.html += template(element);
         });
-        electron.ipcRenderer.send(
-          "piece-preview-opened",
-          this.previewOptions
-        );
+        electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
         //console.log("rendered html", this.preview);
       } else {
         this.selectedPieceId = match.parentId;
