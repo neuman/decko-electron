@@ -34,7 +34,7 @@
             style="height:100%; width:100%;"
             v-else-if="this.selectedDirectoryListItem.category == 'directory'"
           >
-            <preview-iframe style="height:100%; width:100%; border:none;"></preview-iframe>
+            <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
           </div>
           <div style="height:100%; width:100%;" v-else>No Content</div>
         </div>
@@ -47,6 +47,27 @@
 const Handlebars = require("handlebars");
 var markdown = require("helper-markdown");
 Handlebars.registerHelper("markdown", markdown({}));
+Handlebars.registerHelper('if_eq', function(a, b, opts) {
+    if (a == b) {
+        return opts.fn(this);
+    } else {
+        return opts.inverse(this);
+    }
+});
+Handlebars.registerHelper('if_gte', function(a, b, opts) {
+    if (a >= b) {
+        return opts.fn(this);
+    } else {
+        return opts.inverse(this);
+    }
+});
+Handlebars.registerHelper('if_lte', function(a, b, opts) {
+    if (a <= b) {
+        return opts.fn(this);
+    } else {
+        return opts.inverse(this);
+    }
+});
 
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
@@ -67,6 +88,34 @@ const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
+
+/*
+const { remote, webFrame } = require("electron");
+const { getCurrentWebContents, Menu, MenuItem } = remote;
+//
+let rightClickPosition;
+//
+const contextMenu = new Menu();
+const menuItem = new MenuItem({
+  label: "Inspect Element",
+  click: () => {
+    let factor = webFrame.getZoomFactor();
+    let x = Math.round(rightClickPosition.x * factor);
+    let y = Math.round(rightClickPosition.y * factor);
+    getCurrentWebContents().inspectElement(x, y);
+  },
+});
+contextMenu.append(menuItem);
+//
+window.addEventListener(
+  "contextmenu",
+  (event) => {
+    event.preventDefault();
+    rightClickPosition = { x: event.x, y: event.y };
+    contextMenu.popup();
+  },
+  false
+);*/
 
 const assetCategories = {
   DIRECTORY: "directory",
@@ -122,6 +171,25 @@ export default {
     electron.ipcRenderer.on("debugAction", (event, arg) => {
       this.debugAction();
     });
+    electron.ipcRenderer.on("openWebViewDevTools", (event, arg) => {
+      document.querySelector("webview").openDevTools();
+    });
+  },
+  updated() {
+    //only fire when iframe is present
+    /*if(this.$refs.iframeContent != undefined){
+        console.log("this.$refs.iframeContent", this.$refs.iframeContent)
+        this.$refs.iframeContent.$refs.iframeContent.addEventListener(
+          "contextmenu",
+          (event) => {
+            event.preventDefault();
+            rightClickPosition = { x: event.x, y: event.y };
+            console.log("CAPTURED")
+            contextMenu.popup();
+          },
+          false
+        );
+    }*/
   },
   data() {
     return {
@@ -163,7 +231,7 @@ export default {
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
     },
-    handleFileChange(filePath){
+    handleFileChange(filePath) {
       console.log("fileChange", filePath);
     },
     loadFile(filePath, absoloute) {
@@ -185,6 +253,7 @@ export default {
       this.previewOptions.doExport = false;
     },
     magnetizeOpenFile() {
+      this.previewOptions.doExport = false;
       this.previewOptions.doMagnetize = !this.previewOptions.doMagnetize;
       this.assetSelected(this.selectedPieceId, this.previewOptions);
     },
@@ -250,10 +319,14 @@ export default {
           console.log("tempThis", tempThis);
           tempThis.handleFileChange(pathIn);
           if (
-            tempThis.selectedDirectoryListItem.category == assetCategories.DIRECTORY
+            tempThis.selectedDirectoryListItem.category ==
+            assetCategories.DIRECTORY
           ) {
-            console.log("CSS", pathIn, "has been changed");
+            console.log(pathIn, "has been changed");
+            console.log('path.dirname(pathIn)', path.basename(path.dirname(pathIn)))
+            if(path.basename(path.dirname(pathIn)) != "output"){
             tempThis.assetRender(tempThis.selectedDirectoryListItem.id, false);
+            }
           }
         })
         .on("unlink", function (pathIn) {
@@ -507,7 +580,10 @@ export default {
     assetSelected(id) {
       console.log("assetSelected", id);
       this.selectedDirectoryListItem = this.getAssetById(id);
-                console.log("this.selectedDirectoryListItem", this.selectedDirectoryListItem)
+      console.log(
+        "this.selectedDirectoryListItem",
+        this.selectedDirectoryListItem
+      );
       this.assetRender(id, false);
     },
     getAssetById(id) {
@@ -561,8 +637,9 @@ export default {
         //console.log("templateContent", templateContent);
         var template = Handlebars.compile(templateContent);
         datafileContent.forEach((element) => {
-          this.previewOptions.html += template(element);
+          this.previewOptions.html += template(element)+"<br/>";
         });
+
         electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
         //console.log("rendered html", this.preview);
       } else {

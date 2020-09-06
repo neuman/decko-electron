@@ -19,6 +19,7 @@
     "bootstrap-vue": "^2.16.0",
     "core-js": "^3.6.5",
     "create-html-element": "^3.0.0",
+    "electron-context-menu": "^2.3.0",
     "emmet": "git+https://github.com/cloud9ide/emmet-core.git#41973fcc70392864c7a469cf5dcd875b88b93d4a",
     "handlebars": "^4.7.6",
     "handsontable": "^8.0.0",

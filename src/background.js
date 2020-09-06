@@ -29,6 +29,8 @@ function createWindow() {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      webviewTag:true,
+      browserviewTag:true,
       enableRemoteModule: true,
       allowRunningInsecureContent: true
     }
@@ -230,6 +232,12 @@ app.on('ready', async () => {
         { role: 'reload' },
         { role: 'forcereload' },
         { role: 'toggledevtools' },
+        {
+          label: 'Open Webview Devtools',
+          click: function () {
+            win.webContents.send('openWebViewDevTools', '');
+          }
+        },
         { type: 'separator' },
         { role: 'resetzoom' },
         { role: 'zoomin' },
@@ -371,7 +379,7 @@ function generateServer(arg){
         var decodedBody = decodeURIComponent(body);
         var base64Data = decodedBody.split(';base64,').pop();
         //console.log('stripped body:',base64Data);
-        fs.writeFile(path.join(rootDirectoryPath, request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
+        fs.writeFile(path.join(rootDirectoryPath, 'output', request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
           console.log(err);
         });
         response.writeHead(200, { 'Content-Type': 'text/html' })
