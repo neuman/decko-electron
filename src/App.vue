@@ -30,6 +30,7 @@
                 <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
               </pane>
               <pane>
+                <div style="position:fixed; width:300px; height:100%; z-index:100;"></div>
                 <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
               </pane>
             </splitpanes>
@@ -97,7 +98,7 @@ var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
 
-/*
+
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
 //
@@ -123,7 +124,7 @@ window.addEventListener(
     contextMenu.popup();
   },
   false
-);*/
+);
 import {assetCategories, assetFilenames, staticStrings} from './utilitybelt.js'
 
 

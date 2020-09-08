@@ -11069,3 +11069,10 @@ background-color:#25292a;
 .assetListItemActive{
   background-color:#303030;
 }
+
+.mouseEventBlockerStyle{
+  width: '100%';
+  height: '100%';
+  position: 'fixed';
+  z-index: 100;
+}
