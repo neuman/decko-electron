@@ -25,7 +25,15 @@
 
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
           <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
-            <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+            <splitpanes class="default-theme">
+              <pane>
+                <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+              </pane>
+              <pane>
+                <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
+              </pane>
+            </splitpanes>
+            
           </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
@@ -303,7 +311,7 @@ export default {
           tempThis.handleFileChange(pathIn);
           if (
             tempThis.selectedDirectoryListItem.category ==
-            assetCategories.DIRECTORY
+            assetCategories.TEMPLATE
           ) {
             console.log(pathIn, "has been changed");
             console.log('path.dirname(pathIn)', path.basename(path.dirname(pathIn)))
@@ -584,27 +592,26 @@ export default {
 
       //if it's a dir, expand it
       //if it's a file, open it in editor
-      if (match.parentId == undefined) {
-        //get template and read it
+      if (match.parentId != undefined) {
+        this.selectedPieceId = match.parentId;
+        this.previewOptions.html = undefined;
+        if (match.filePath.split(".").pop() == "json") {
+          this.openFilePathInSpreadSheet(match.filePath);
+        } else if (match.filePath.split(".").pop() == "html") {
+          console.log("openFilePathInEditor", match.filePath);
+          this.openFilePathInEditor(match.filePath);
+
+                 //get template and read it
         this.selectedPieceId = match.id;
         //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-        var templateFilePath = undefined;
-        this.Assets.forEach((element) => {
-          if (
-            element.parentId == id &&
-            element.category == assetCategories.TEMPLATE
-          ) {
-            templateFilePath = element.filePath;
-          }
-        });
-        console.log("templateFilePath", templateFilePath);
+        var templateFilePath = match.filePath;
         var templateContent = this.loadFile(templateFilePath);
 
         //get datafile filePath
         var datafileFilePath = undefined;
         this.Assets.forEach((element) => {
           if (
-            element.parentId == id &&
+            element.parentId == match.parentId &&
             element.category == assetCategories.DATAFILE
           ) {
             datafileFilePath = element.filePath;
@@ -629,14 +636,6 @@ export default {
 
         electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
         //console.log("rendered html", this.preview);
-      } else {
-        this.selectedPieceId = match.parentId;
-        this.previewOptions.html = undefined;
-        if (match.filePath.split(".").pop() == "json") {
-          this.openFilePathInSpreadSheet(match.filePath);
-        } else {
-          console.log("openFilePathInEditor", match.filePath);
-          this.openFilePathInEditor(match.filePath);
         }
       }
     },
