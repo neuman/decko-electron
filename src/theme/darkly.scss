@@ -11061,3 +11061,11 @@ $bv-enable-table-stacked: false;
 ::-webkit-scrollbar-thumb:hover {
   background: #4e4e4e;
 }
+
+.assetListItem:hover{
+background-color:#25292a;
+}
+
+.assetListItemActive{
+  background-color:#303030;
+}

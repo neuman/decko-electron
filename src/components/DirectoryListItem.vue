@@ -1,11 +1,12 @@
 <template>
   <div v-on:click="isClicked">
     <input type="checkbox" :id="id" :checked="isVolatile" />
-    <label class="text-nowrap" :for="id">{{label}}</label>
+    <label class="text-nowrap" :for="id">iconName | {{label}}</label>
   </div>
 </template>
 
 <script>
+import testeroni from "../utilitybelt.js";
 export default {
   props: {
     label: { required: true, type: String },
@@ -17,6 +18,7 @@ export default {
   data() {
     return {
       isVolatile: this.volatile,
+      iconName: testeroni(),
     };
   },
   methods: {

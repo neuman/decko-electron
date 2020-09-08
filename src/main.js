@@ -15,6 +15,12 @@ if (process.env.NODE_ENV !== 'development') {
 Vue.use(BootstrapVue)
 
 
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faCode, faChevronDown, faDatabase, faHashtag, faDiceFive } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+library.add([faCode, faChevronDown, faDatabase, faHashtag, faDiceFive])
+Vue.component('font-awesome-icon', FontAwesomeIcon)
+
 
 
 Vue.config.productionTip = false

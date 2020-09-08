@@ -116,25 +116,8 @@ window.addEventListener(
   },
   false
 );*/
+import {assetCategories, assetFilenames, staticStrings} from './utilitybelt.js'
 
-const assetCategories = {
-  DIRECTORY: "directory",
-  TEMPLATE: "template",
-  STYLESHEET: "stylesheet",
-  DATAFILE: "datafile",
-  OTHER: "other",
-};
-
-const assetFilenames = {
-  DIRECTORY: "",
-  TEMPLATE: "template.html",
-  STYLESHEET: "stylesheet.css",
-  DATAFILE: "datafile.json",
-};
-
-const staticStrings = {
-  DECKODIRNAME: "decko",
-};
 
 export default {
   name: "App",
@@ -312,7 +295,7 @@ export default {
 
       watcher
         .on("add", function (pathIn) {
-          console.log("File", pathIn, "has been added");
+          //console.log("File", pathIn, "has been added");
         })
         .on("change", function (pathIn) {
           console.log("File", pathIn, "has been changed");
@@ -371,7 +354,7 @@ export default {
         fileName: fileName,
         filePath: path.join(directoryPath, fileName),
         sep: path.sep,
-        active: true,
+        active: false,
         singleton: false,
         depth: depth,
       };
@@ -579,7 +562,11 @@ export default {
     },
     assetSelected(id) {
       console.log("assetSelected", id);
+      if(this.selectedDirectoryListItem != undefined){
+        this.selectedDirectoryListItem.active = false;
+      }
       this.selectedDirectoryListItem = this.getAssetById(id);
+      this.$set(this.selectedDirectoryListItem, 'active', true)
       console.log(
         "this.selectedDirectoryListItem",
         this.selectedDirectoryListItem
