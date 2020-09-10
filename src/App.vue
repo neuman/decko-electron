@@ -1,5 +1,12 @@
 <template>
   <div id="app" class="h-100">
+            <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
+          <div class="d-block text-center">
+            <p
+              class="my-4"
+            >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
+          </div>
+        </b-modal>
     <splitpanes class="default-theme">
       <pane size="15" class="bg-light overflow-y-handled">
         <div v-for="item in Assets" :key="item.id">
@@ -15,22 +22,18 @@
         </div>
       </pane>
       <pane class="bg-dark">
-        <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
-          <div class="d-block text-center">
-            <p
-              class="my-4"
-            >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
-          </div>
-        </b-modal>
+
 
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
           <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
-            <splitpanes class="default-theme">
+            <splitpanes class="default-theme" 
+    @resize="handlePaneEvent('resize', $event)"
+  @resized="handlePaneEvent('resized', $event)">
               <pane>
                 <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
               </pane>
               <pane>
-                <div style="position:fixed; width:300px; height:100%; z-index:100;"></div>
+                <div v-if="paneDragging" style="position:fixed; width:100%; height:100%; z-index:100;"></div>
                 <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
               </pane>
             </splitpanes>
@@ -210,6 +213,7 @@ export default {
         doMagnetize: false,
         html: undefined,
       },
+      paneDragging:false,
     };
   },
   methods: {
@@ -222,6 +226,14 @@ export default {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
+    },
+    handlePaneEvent(name, event){
+      console.log(name, event);
+      if(name == "resize"){
+        this.paneDragging = true;
+      }else{
+        this.paneDragging = false;
+      }
     },
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
