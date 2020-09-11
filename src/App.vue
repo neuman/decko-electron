@@ -35,7 +35,7 @@
               <pane>
                 <div
                   v-if="paneDragging"
-                  style="position:fixed; width:100%; height:100%; z-index:100;"
+                  style="background-color:green; position:fixed; width:100%; height:100%; z-index:100;"
                 ></div>
                 <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
               </pane>
@@ -668,7 +668,8 @@ export default {
             const webview = document.querySelector("webview");
             console.log("webview", webview);
             webview.addEventListener("ipc-message", (event) => {
-              console.log(event.channel);
+              var webviewMessage = console.log("JSON.parse(event.chanel)", JSON.parse(event.channel));
+              //contextMenu.popup();
               // Prints "pong"
             });
             webview.send("pinga");

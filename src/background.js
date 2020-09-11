@@ -473,6 +473,9 @@ function buildWebPage(css, scripts, body) {
 
   var html = createHtmlElement({
     name: 'html',
+    attributes:{
+      'pointer-events': 'none'
+    },
     html: createHtmlElement({
       name: 'head',
       html: css_block + scripts_block
