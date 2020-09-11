@@ -59,7 +59,7 @@ export default {
         this.myIconColor = "lightgreen";
         this.myIconString = "database";
       } else {
-        this.myIconColor = "#ghostwhite";
+        this.myIconColor = "#fff";
         this.myIconString = "file";
       }
     },

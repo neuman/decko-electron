@@ -35,7 +35,7 @@
               <pane>
                 <div
                   v-if="paneDragging"
-                  style="background-color:green; position:fixed; width:100%; height:100%; z-index:100;"
+                  style="position:fixed; width:100%; height:100%; z-index:100;"
                 ></div>
                 <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
               </pane>
@@ -223,6 +223,8 @@ export default {
   },
   methods: {
     debugAction() {
+      getCurrentWebContents().send('setIframeURL', 'http://www.google.com');
+      /*
       console.log("global.__static", global.__static);
       console.log(
         this.loadFile(path.join(global.__static, "public", "milkcrate.js"))
@@ -230,7 +232,7 @@ export default {
       electron.ipcRenderer.on("asynchronous-reply", (event, arg) => {
         console.log(arg); // prints "pong"
       });
-      electron.ipcRenderer.send("asynchronous-message", "ping");
+      electron.ipcRenderer.send("asynchronous-message", "ping");*/
     },
     handlePaneEvent(name, event) {
       console.log(name, event);
@@ -351,20 +353,41 @@ export default {
           console.error("Error happened", error);
         });
 
+        this.openProjectDirectory(path.dirname(filePath))
+
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
-    /*openProjectDirectory(directoryPath) {
+    openProjectDirectory(directoryPath) {
+      this.openDirectory(directoryPath, undefined)
+    },
+    openDirectory(directoryPath, parentAsset) {
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
           console.log("\nCurrent directory filenames:");
           files.forEach((file) => {
-            console.log(file);
-            this.addDirectoryListItem(directoryPath, file);
+            var fileDirectoryPath = path.join(
+              directoryPath,
+              file
+            );
+            console.log(fileDirectoryPath);
+            if(fs.lstatSync(fileDirectoryPath).isDirectory()){
+              this.openDirectory(fileDirectoryPath, parentAsset)
+            }else{
+              //add as file
+              var newPiece = this.addAsset(
+              parentAsset,
+              assetCategories.OTHER,
+              directoryPath,
+              assetFilenames.DIRECTORY,
+              file,
+              1
+            );
+            }
           });
         }
       });
-    },*/
+    },
     addDirectoryListItem(directoryPath, fileName) {
       this.DirectoryListItems.push({
         id: uniqueId("directoryListItem-"),
