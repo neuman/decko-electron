@@ -390,7 +390,7 @@ function generateServer(arg){
       if (request.url == "/") {
         console.log('got "/" building web page..');
         var jsFiles = [
-          loadFile(path.join(rootDirectoryPath, 'jquery-3.5.1.min.js')),
+          ///loadFile(path.join(rootDirectoryPath, 'jquery-3.5.1.min.js')),
           loadFile(path.join(rootDirectoryPath, 'html2canvas.js')),
           loadFile(path.join(rootDirectoryPath, 'canvas2image.js')),
         ];

@@ -1,12 +1,12 @@
 <template>
   <div id="app" class="h-100">
-            <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
-          <div class="d-block text-center">
-            <p
-              class="my-4"
-            >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
-          </div>
-        </b-modal>
+    <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
+      <div class="d-block text-center">
+        <p
+          class="my-4"
+        >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
+      </div>
+    </b-modal>
     <splitpanes class="default-theme">
       <pane size="15" class="bg-light overflow-y-handled">
         <div v-for="item in Assets" :key="item.id">
@@ -22,22 +22,24 @@
         </div>
       </pane>
       <pane class="bg-dark">
-
-
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
           <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
-            <splitpanes class="default-theme" 
-    @resize="handlePaneEvent('resize', $event)"
-  @resized="handlePaneEvent('resized', $event)">
+            <splitpanes
+              class="default-theme"
+              @resize="handlePaneEvent('resize', $event)"
+              @resized="handlePaneEvent('resized', $event)"
+            >
               <pane>
                 <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
               </pane>
               <pane>
-                <div v-if="paneDragging" style="position:fixed; width:100%; height:100%; z-index:100;"></div>
+                <div
+                  v-if="paneDragging"
+                  style="position:fixed; width:100%; height:100%; z-index:100;"
+                ></div>
                 <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
               </pane>
             </splitpanes>
-            
           </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
@@ -59,28 +61,28 @@
 const Handlebars = require("handlebars");
 var markdown = require("helper-markdown");
 Handlebars.registerHelper("markdown", markdown({}));
-Handlebars.registerHelper('if_eq', function(a, b, opts) {
-    if (a == b) {
-        return opts.fn(this);
-    } else {
-        return opts.inverse(this);
-    }
+Handlebars.registerHelper("if_eq", function (a, b, opts) {
+  if (a == b) {
+    return opts.fn(this);
+  } else {
+    return opts.inverse(this);
+  }
 });
-Handlebars.registerHelper('if_gte', function(a, b, opts) {
-    if (a >= b) {
-        return opts.fn(this);
-    } else {
-        return opts.inverse(this);
-    }
+Handlebars.registerHelper("if_gte", function (a, b, opts) {
+  if (a >= b) {
+    return opts.fn(this);
+  } else {
+    return opts.inverse(this);
+  }
 });
-Handlebars.registerHelper('if_lte', function(a, b, opts) {
-    if (a <= b) {
-        return opts.fn(this);
-    } else {
-        return opts.inverse(this);
-    }
+Handlebars.registerHelper("if_lte", function (a, b, opts) {
+  if (a <= b) {
+    return opts.fn(this);
+  } else {
+    return opts.inverse(this);
+  }
 });
-
+import Vue from "vue";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
 import PreviewIframe from "./components/PreviewIframe";
@@ -100,7 +102,6 @@ const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
-
 
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
@@ -128,8 +129,12 @@ window.addEventListener(
   },
   false
 );
-import {assetCategories, assetFilenames, staticStrings} from './utilitybelt.js'
-
+import {
+  assetCategories,
+  assetFilenames,
+  staticStrings,
+} from "./utilitybelt.js";
+//import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
 
 export default {
   name: "App",
@@ -213,7 +218,7 @@ export default {
         doMagnetize: false,
         html: undefined,
       },
-      paneDragging:false,
+      paneDragging: false,
     };
   },
   methods: {
@@ -227,11 +232,11 @@ export default {
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");
     },
-    handlePaneEvent(name, event){
+    handlePaneEvent(name, event) {
       console.log(name, event);
-      if(name == "resize"){
+      if (name == "resize") {
         this.paneDragging = true;
-      }else{
+      } else {
         this.paneDragging = false;
       }
     },
@@ -327,9 +332,15 @@ export default {
             assetCategories.TEMPLATE
           ) {
             console.log(pathIn, "has been changed");
-            console.log('path.dirname(pathIn)', path.basename(path.dirname(pathIn)))
-            if(path.basename(path.dirname(pathIn)) != "output"){
-            tempThis.assetRender(tempThis.selectedDirectoryListItem.id, false);
+            console.log(
+              "path.dirname(pathIn)",
+              path.basename(path.dirname(pathIn))
+            );
+            if (path.basename(path.dirname(pathIn)) != "output") {
+              tempThis.assetRender(
+                tempThis.selectedDirectoryListItem.id,
+                false
+              );
             }
           }
         })
@@ -583,11 +594,11 @@ export default {
     },
     assetSelected(id) {
       console.log("assetSelected", id);
-      if(this.selectedDirectoryListItem != undefined){
+      if (this.selectedDirectoryListItem != undefined) {
         this.selectedDirectoryListItem.active = false;
       }
       this.selectedDirectoryListItem = this.getAssetById(id);
-      this.$set(this.selectedDirectoryListItem, 'active', true)
+      this.$set(this.selectedDirectoryListItem, "active", true);
       console.log(
         "this.selectedDirectoryListItem",
         this.selectedDirectoryListItem
@@ -614,41 +625,57 @@ export default {
           console.log("openFilePathInEditor", match.filePath);
           this.openFilePathInEditor(match.filePath);
 
-                 //get template and read it
-        this.selectedPieceId = match.id;
-        //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-        var templateFilePath = match.filePath;
-        var templateContent = this.loadFile(templateFilePath);
+          //get template and read it
+          this.selectedPieceId = match.id;
+          //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
+          var templateFilePath = match.filePath;
+          var templateContent = this.loadFile(templateFilePath);
 
-        //get datafile filePath
-        var datafileFilePath = undefined;
-        this.Assets.forEach((element) => {
-          if (
-            element.parentId == match.parentId &&
-            element.category == assetCategories.DATAFILE
-          ) {
-            datafileFilePath = element.filePath;
-          }
-        });
-        console.log("datafileFilePath", datafileFilePath);
+          //get datafile filePath
+          var datafileFilePath = undefined;
+          this.Assets.forEach((element) => {
+            if (
+              element.parentId == match.parentId &&
+              element.category == assetCategories.DATAFILE
+            ) {
+              datafileFilePath = element.filePath;
+            }
+          });
+          console.log("datafileFilePath", datafileFilePath);
 
-        //read datafile
-        var datafileContent = JSON.parse(this.loadFile(datafileFilePath));
-        console.log(
-          "rendering template ",
-          templateFilePath,
-          "with data ",
-          datafileFilePath
-        );
-        this.previewOptions.html = "";
-        //console.log("templateContent", templateContent);
-        var template = Handlebars.compile(templateContent);
-        datafileContent.forEach((element) => {
-          this.previewOptions.html += template(element)+"<br/>";
-        });
+          //read datafile
+          var datafileContent = JSON.parse(this.loadFile(datafileFilePath));
+          console.log(
+            "rendering template ",
+            templateFilePath,
+            "with data ",
+            datafileFilePath
+          );
+          this.previewOptions.html = "";
+          //console.log("templateContent", templateContent);
+          var template = Handlebars.compile(templateContent);
+          datafileContent.forEach((element) => {
+            this.previewOptions.html += template(element) + "<br/>";
+          });
 
-        electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
-        //console.log("rendered html", this.preview);
+          electron.ipcRenderer.send(
+            "piece-preview-opened",
+            this.previewOptions
+          );
+
+          setTimeout(function () {
+                        // In embedder page.
+            const webview = document.querySelector("webview");
+            console.log("webview", webview);
+            webview.addEventListener("ipc-message", (event) => {
+              console.log(event.channel);
+              // Prints "pong"
+            });
+            webview.send("pinga");
+          }, 25);
+
+
+          //console.log("rendered html", this.preview);
         }
       }
     },

@@ -27,6 +27,7 @@
     "handlebars": "^4.7.6",
     "handsontable": "^8.0.0",
     "helper-markdown": "^1.0.0",
+    "jquery": "^3.5.1",
     "lodash.uniqueid": "^4.0.1",
     "markdown-it": "^11.0.0",
     "mime-types": "^2.1.27",
