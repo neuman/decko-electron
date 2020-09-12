@@ -358,30 +358,54 @@ export default {
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {
-      this.openDirectory(directoryPath, undefined)
+      //create root folder asset
+            var rootAsset = this.addAsset(
+              undefined,
+              assetCategories.DIRECTORY,
+              directoryPath,
+              assetFilenames.DIRECTORY,
+              path.dirname(directoryPath),
+              1
+            );
+      this.openDirectory(directoryPath, rootAsset)
     },
     openDirectory(directoryPath, parentAsset) {
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
           console.log("\nCurrent directory filenames:");
+          //for every file in the dir directoryPath
           files.forEach((file) => {
             var fileDirectoryPath = path.join(
               directoryPath,
               file
             );
             console.log(fileDirectoryPath);
-            if(fs.lstatSync(fileDirectoryPath).isDirectory()){
-              this.openDirectory(fileDirectoryPath, parentAsset)
-            }else{
-              //add as file
-              var newPiece = this.addAsset(
+            var newPiece = undefined;
+              var assetDepth = 1;
+              if(parentAsset!=undefined){
+                assetDepth = parentAsset.depth+1
+              }
+              if(fs.lstatSync(fileDirectoryPath).isDirectory()){
+              //add as dir
+              newPiece = this.addAsset(
               parentAsset,
-              assetCategories.OTHER,
+              assetCategories.DIRECTORY,
               directoryPath,
               assetFilenames.DIRECTORY,
               file,
-              1
+              assetDepth
+            );
+              this.openDirectory(fileDirectoryPath, newPiece)
+            }else{
+              //add as file
+              newPiece = this.addAsset(
+              parentAsset,
+              assetCategories.OTHER,
+              directoryPath,
+              file,
+              file,
+              assetDepth
             );
             }
           });
@@ -413,7 +437,11 @@ export default {
         singleton: false,
         depth: depth,
       };
+      if(parent != undefined){
+        this.Assets.splice(this.Assets.indexOf(parent)+1,0,output)
+      }else{
       this.Assets.push(output);
+      }
       return output;
     },
     openFilePathInEditor(filePath) {
