@@ -50,7 +50,7 @@
           >
             <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
           </div>
-          <div style="height:100%; width:100%;" v-else>No Content</div>
+          <div style="height:100%; width:100%;" v-else>Decko Can't Open This File. Please navigate to it in your file explorer to view or modify.</div>
         </div>
       </pane>
     </splitpanes>
@@ -133,6 +133,7 @@ import {
   assetCategories,
   assetFilenames,
   staticStrings,
+  assetCategoryExtensions,
 } from "./utilitybelt.js";
 //import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
 
@@ -224,6 +225,7 @@ export default {
   methods: {
     debugAction() {
       getCurrentWebContents().send('setIframeURL', 'http://www.google.com');
+      console.log(this.Assets);
       /*
       console.log("global.__static", global.__static);
       console.log(
@@ -245,6 +247,21 @@ export default {
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
     },
+    getAssetCategory(fileName){
+      var output = ""
+      if(assetCategoryExtensions.DIRECTORY.includes(this.getFileExtension(fileName))){
+        return assetCategories.DIRECTORY;
+      }else if(assetCategoryExtensions.TEMPLATE.includes(this.getFileExtension(fileName))){
+        return assetCategories.TEMPLATE;
+      }else if(assetCategoryExtensions.STYLESHEET.includes(this.getFileExtension(fileName))){
+        return assetCategories.STYLESHEET;
+      }else{
+        return assetCategories.OTHER
+      }
+    },
+  getFileExtension(filePath){
+    return filePath.split(".").pop();
+  },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
       if (absoloute != true) {
@@ -301,11 +318,12 @@ export default {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
           this.rootDirectoryPath = path.dirname(filePath);
+          this.datafileFilePath = path.join('decko', 'datafile.json')
           this.openProjectFile(filePath);
         });
     },
     openProjectFile(filePath) {
-      this.Assets = JSON.parse(this.loadFile(filePath, true));
+      //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
       if (this.sep != path.sep) {
         this.Assets.forEach((element) => {
@@ -391,33 +409,27 @@ export default {
               newPiece = this.addAsset(
               parentAsset,
               assetCategories.DIRECTORY,
-              directoryPath,
+              directoryPath.replace(this.rootDirectoryPath,''),
               assetFilenames.DIRECTORY,
               file,
               assetDepth
             );
               this.openDirectory(fileDirectoryPath, newPiece)
             }else{
+              console.log("directoryPath.replace(this.rootDirectoryPath,'')", directoryPath, this.rootDirectoryPath, directoryPath.replace(this.rootDirectoryPath,''))
               //add as file
               newPiece = this.addAsset(
               parentAsset,
-              assetCategories.OTHER,
-              directoryPath,
+              this.getAssetCategory(file),
+              directoryPath.replace(this.rootDirectoryPath,''),
               file,
               file,
               assetDepth
             );
+              newPiece.active = false
             }
           });
         }
-      });
-    },
-    addDirectoryListItem(directoryPath, fileName) {
-      this.DirectoryListItems.push({
-        id: uniqueId("directoryListItem-"),
-        label: fileName,
-        filePath: path.join(directoryPath, fileName),
-        volatile: false,
       });
     },
     addAsset(parent, category, directoryPath, fileName, label, depth) {
@@ -426,7 +438,7 @@ export default {
         parentId = parent.id;
       }
       var output = {
-        id: uniqueId("asset-"),
+        id: uniqueId("asset-")+label,
         parentId: parentId,
         category: category,
         label: label,
@@ -662,6 +674,12 @@ export default {
       });
       return match;
     },
+    getChildrenById(id) {
+      var match = this.Assets.filter((obj) => {
+        return obj.parentId === id;
+      });
+      return match;
+    },
     assetRender(id, arg) {
       var match = this.getAssetById(id);
 
@@ -670,9 +688,10 @@ export default {
       if (match.parentId != undefined) {
         this.selectedPieceId = match.parentId;
         this.previewOptions.html = undefined;
-        if (match.filePath.split(".").pop() == "json") {
+        var fileExtension = this.getFileExtension(match.filePath)
+        if (fileExtension == "json") {
           this.openFilePathInSpreadSheet(match.filePath);
-        } else if (match.filePath.split(".").pop() == "html") {
+        } else if (fileExtension == "html") {
           console.log("openFilePathInEditor", match.filePath);
           this.openFilePathInEditor(match.filePath);
 
@@ -682,38 +701,27 @@ export default {
           var templateFilePath = match.filePath;
           var templateContent = this.loadFile(templateFilePath);
 
-          //get datafile filePath
-          var datafileFilePath = undefined;
-          this.Assets.forEach((element) => {
-            if (
-              element.parentId == match.parentId &&
-              element.category == assetCategories.DATAFILE
-            ) {
-              datafileFilePath = element.filePath;
-            }
-          });
-          console.log("datafileFilePath", datafileFilePath);
 
           //read datafile
-          var datafileContent = JSON.parse(this.loadFile(datafileFilePath));
+          var datafileContent = JSON.parse(this.loadFile(this.datafileFilePath));
           console.log(
             "rendering template ",
             templateFilePath,
             "with data ",
-            datafileFilePath
+            this.datafileFilePath
           );
           this.previewOptions.html = "";
           //console.log("templateContent", templateContent);
           var template = Handlebars.compile(templateContent);
-          datafileContent.forEach((element) => {
-            this.previewOptions.html += template(element) + "<br/>";
-          });
+          this.previewOptions.html = template(datafileContent);
+          
 
           electron.ipcRenderer.send(
             "piece-preview-opened",
             this.previewOptions
           );
 
+/*
           setTimeout(function () {
                         // In embedder page.
             const webview = document.querySelector("webview");
@@ -725,9 +733,15 @@ export default {
             });
             webview.send("pinga");
           }, 25);
-
+*/
 
           //console.log("rendered html", this.preview);
+        }else if(match.category == assetCategories.DIRECTORY){
+          console.log("CLICKED DIRECTORY")
+        this.getChildrenById(match.id).forEach((element) => {
+          element.active = false
+        });
+
         }
       }
     },

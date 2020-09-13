@@ -1,5 +1,5 @@
 <template>
-  <div v-on:click="isClicked">
+  <div v-if="myActive == true" v-on:click="isClicked">
     <div class="text-nowrap assetListItem" v-bind:class="{ assetListItemActive: myActive}" v-bind:style="{ 'padding-left': myIndentString+'px'}" :for="id">
       <font-awesome-icon :icon="myIconString" v-bind:style="{ 'color': myIconColor}"/>
       {{label}}
@@ -21,7 +21,7 @@ export default {
     volatile: { default: false, type: Boolean },
     id: { required: true, type: String },
     depth: { required: true, type: Number },
-    active: { default: false, type: Boolean },
+    active: { default: true, type: Boolean },
   },
   data() {
     return {

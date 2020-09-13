@@ -45,6 +45,14 @@ export function buildWebPage(css, scripts, body) {
     OTHER: "other",
   };
   
+
+  export const assetCategoryExtensions = {
+    DIRECTORY: "",
+    TEMPLATE: ["html"],
+    STYLESHEET: ["css"],
+    DATAFILE: ["json"],
+  };
+
   export const assetFilenames = {
     DIRECTORY: "",
     TEMPLATE: "template.html",
