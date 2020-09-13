@@ -58,6 +58,9 @@ export default {
       } else if (this.category == assetCategories.DATAFILE) {
         this.myIconColor = "lightgreen";
         this.myIconString = "database";
+      }else if (this.category == assetCategories.IMAGE) {
+        this.myIconColor = "teal";
+        this.myIconString = "image";
       } else {
         this.myIconColor = "#fff";
         this.myIconString = "file";

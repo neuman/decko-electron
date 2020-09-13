@@ -42,6 +42,7 @@ export function buildWebPage(css, scripts, body) {
     TEMPLATE: "template",
     STYLESHEET: "stylesheet",
     DATAFILE: "datafile",
+    IMAGE:"image",
     OTHER: "other",
   };
   
@@ -51,6 +52,7 @@ export function buildWebPage(css, scripts, body) {
     TEMPLATE: ["html"],
     STYLESHEET: ["css"],
     DATAFILE: ["json"],
+    IMAGE: ["jpg","jpeg","png"],
   };
 
   export const assetFilenames = {

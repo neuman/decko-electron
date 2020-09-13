@@ -44,13 +44,24 @@
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
           </div>
+          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'image'">
+            <v-zoomer style="width: 100%; height: 100%; border: solid 1px silver;">
+              <img
+                v-bind:src="'safe-file-protocol:/'+this.rootDirectoryPath+this.selectedDirectoryListItem.filePath"
+                style="object-fit: contain; width: 100%; height: 100%;"
+              />
+            </v-zoomer>
+          </div>
           <div
             style="height:100%; width:100%;"
             v-else-if="this.selectedDirectoryListItem.category == 'directory'"
           >
             <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
           </div>
-          <div style="height:100%; width:100%;" v-else>Decko Can't Open This File. Please navigate to it in your file explorer to view or modify.</div>
+          <div
+            style="height:100%; width:100%;"
+            v-else
+          >Decko Can't Open This File. Please navigate to it in your file explorer to view or modify.</div>
         </div>
       </pane>
     </splitpanes>
@@ -98,6 +109,7 @@ import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
+import VueZoomer from 'vue-zoomer'
 const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
@@ -136,7 +148,7 @@ import {
   assetCategoryExtensions,
 } from "./utilitybelt.js";
 //import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
-
+Vue.use(VueZoomer)
 export default {
   name: "App",
   components: {
@@ -146,6 +158,7 @@ export default {
     HotTable,
     Splitpanes,
     Pane,
+    
   },
   created: function () {
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -224,7 +237,7 @@ export default {
   },
   methods: {
     debugAction() {
-      getCurrentWebContents().send('setIframeURL', 'http://www.google.com');
+      getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       console.log(this.Assets);
       /*
       console.log("global.__static", global.__static);
@@ -247,21 +260,43 @@ export default {
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
     },
-    getAssetCategory(fileName){
-      var output = ""
-      if(assetCategoryExtensions.DIRECTORY.includes(this.getFileExtension(fileName))){
+    getAssetCategory(fileName) {
+      var output = "";
+      if (
+        assetCategoryExtensions.DIRECTORY.includes(
+          this.getFileExtension(fileName)
+        )
+      ) {
         return assetCategories.DIRECTORY;
-      }else if(assetCategoryExtensions.TEMPLATE.includes(this.getFileExtension(fileName))){
+      } else if (
+        assetCategoryExtensions.TEMPLATE.includes(
+          this.getFileExtension(fileName)
+        )
+      ) {
         return assetCategories.TEMPLATE;
-      }else if(assetCategoryExtensions.STYLESHEET.includes(this.getFileExtension(fileName))){
+      } else if (
+        assetCategoryExtensions.STYLESHEET.includes(
+          this.getFileExtension(fileName)
+        )
+      ) {
         return assetCategories.STYLESHEET;
-      }else{
-        return assetCategories.OTHER
+      } else if (
+        assetCategoryExtensions.DATAFILE.includes(
+          this.getFileExtension(fileName)
+        )
+      ) {
+        return assetCategories.DATAFILE;
+      } else if (
+        assetCategoryExtensions.IMAGE.includes(this.getFileExtension(fileName))
+      ) {
+        return assetCategories.IMAGE;
+      } else {
+        return assetCategories.OTHER;
       }
     },
-  getFileExtension(filePath){
-    return filePath.split(".").pop();
-  },
+    getFileExtension(filePath) {
+      return filePath.split(".").pop();
+    },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
       if (absoloute != true) {
@@ -318,7 +353,7 @@ export default {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
           this.rootDirectoryPath = path.dirname(filePath);
-          this.datafileFilePath = path.join('decko', 'datafile.json')
+          this.datafileFilePath = path.join("decko", "datafile.json");
           this.openProjectFile(filePath);
         });
     },
@@ -371,62 +406,59 @@ export default {
           console.error("Error happened", error);
         });
 
-        this.openProjectDirectory(path.dirname(filePath))
+      this.openProjectDirectory(path.dirname(filePath));
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {
       //create root folder asset
-            var rootAsset = this.addAsset(
-              undefined,
-              assetCategories.DIRECTORY,
-              directoryPath,
-              assetFilenames.DIRECTORY,
-              path.dirname(directoryPath),
-              1
-            );
-      this.openDirectory(directoryPath, rootAsset)
+      var rootAsset = this.addAsset(
+        undefined,
+        assetCategories.DIRECTORY,
+        directoryPath,
+        assetFilenames.DIRECTORY,
+        path.dirname(directoryPath),
+        1
+      );
+      this.openDirectory(directoryPath, rootAsset);
     },
     openDirectory(directoryPath, parentAsset) {
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
-          console.log("\nCurrent directory filenames:");
+          //console.log("\nCurrent directory filenames:");
           //for every file in the dir directoryPath
-          files.forEach((file) => {
-            var fileDirectoryPath = path.join(
-              directoryPath,
-              file
-            );
-            console.log(fileDirectoryPath);
+          files.reverse().forEach((file) => {
+            var fileDirectoryPath = path.join(directoryPath, file);
+            //console.log(fileDirectoryPath);
             var newPiece = undefined;
-              var assetDepth = 1;
-              if(parentAsset!=undefined){
-                assetDepth = parentAsset.depth+1
-              }
-              if(fs.lstatSync(fileDirectoryPath).isDirectory()){
+            var assetDepth = 1;
+            if (parentAsset != undefined) {
+              assetDepth = parentAsset.depth + 1;
+            }
+            if (fs.lstatSync(fileDirectoryPath).isDirectory()) {
               //add as dir
               newPiece = this.addAsset(
-              parentAsset,
-              assetCategories.DIRECTORY,
-              directoryPath.replace(this.rootDirectoryPath,''),
-              assetFilenames.DIRECTORY,
-              file,
-              assetDepth
-            );
-              this.openDirectory(fileDirectoryPath, newPiece)
-            }else{
-              console.log("directoryPath.replace(this.rootDirectoryPath,'')", directoryPath, this.rootDirectoryPath, directoryPath.replace(this.rootDirectoryPath,''))
+                parentAsset,
+                assetCategories.DIRECTORY,
+                directoryPath.replace(this.rootDirectoryPath, ""),
+                assetFilenames.DIRECTORY,
+                file,
+                assetDepth
+              );
+              this.openDirectory(fileDirectoryPath, newPiece);
+            } else {
+              //console.log("directoryPath.replace(this.rootDirectoryPath,'')", directoryPath, this.rootDirectoryPath, directoryPath.replace(this.rootDirectoryPath,''))
               //add as file
               newPiece = this.addAsset(
-              parentAsset,
-              this.getAssetCategory(file),
-              directoryPath.replace(this.rootDirectoryPath,''),
-              file,
-              file,
-              assetDepth
-            );
-              newPiece.active = false
+                parentAsset,
+                this.getAssetCategory(file),
+                directoryPath.replace(this.rootDirectoryPath, ""),
+                file,
+                file,
+                assetDepth
+              );
+              newPiece.active = false;
             }
           });
         }
@@ -438,7 +470,7 @@ export default {
         parentId = parent.id;
       }
       var output = {
-        id: uniqueId("asset-")+label,
+        id: uniqueId("asset-") + label,
         parentId: parentId,
         category: category,
         label: label,
@@ -449,10 +481,10 @@ export default {
         singleton: false,
         depth: depth,
       };
-      if(parent != undefined){
-        this.Assets.splice(this.Assets.indexOf(parent)+1,0,output)
-      }else{
-      this.Assets.push(output);
+      if (parent != undefined) {
+        this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
+      } else {
+        this.Assets.push(output);
       }
       return output;
     },
@@ -688,7 +720,7 @@ export default {
       if (match.parentId != undefined) {
         this.selectedPieceId = match.parentId;
         this.previewOptions.html = undefined;
-        var fileExtension = this.getFileExtension(match.filePath)
+        var fileExtension = this.getFileExtension(match.filePath);
         if (fileExtension == "json") {
           this.openFilePathInSpreadSheet(match.filePath);
         } else if (fileExtension == "html") {
@@ -701,9 +733,10 @@ export default {
           var templateFilePath = match.filePath;
           var templateContent = this.loadFile(templateFilePath);
 
-
           //read datafile
-          var datafileContent = JSON.parse(this.loadFile(this.datafileFilePath));
+          var datafileContent = JSON.parse(
+            this.loadFile(this.datafileFilePath)
+          );
           console.log(
             "rendering template ",
             templateFilePath,
@@ -714,14 +747,13 @@ export default {
           //console.log("templateContent", templateContent);
           var template = Handlebars.compile(templateContent);
           this.previewOptions.html = template(datafileContent);
-          
 
           electron.ipcRenderer.send(
             "piece-preview-opened",
             this.previewOptions
           );
 
-/*
+          /*
           setTimeout(function () {
                         // In embedder page.
             const webview = document.querySelector("webview");
@@ -736,12 +768,11 @@ export default {
 */
 
           //console.log("rendered html", this.preview);
-        }else if(match.category == assetCategories.DIRECTORY){
-          console.log("CLICKED DIRECTORY")
-        this.getChildrenById(match.id).forEach((element) => {
-          element.active = false
-        });
-
+        } else if (match.category == assetCategories.DIRECTORY) {
+          console.log("CLICKED DIRECTORY");
+          this.getChildrenById(match.id).forEach((element) => {
+            element.active = false;
+          });
         }
       }
     },

@@ -32,7 +32,8 @@ function createWindow() {
       webviewTag:true,
       browserviewTag:true,
       enableRemoteModule: true,
-      allowRunningInsecureContent: true
+      allowRunningInsecureContent: true,
+      webSecurity: false,
     }
   })
 
@@ -279,7 +280,19 @@ app.on('ready', async () => {
   menu = electron.Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
+  // Name the protocol whatever you want
+  const protocolName = 'safe-file-protocol'
 
+  protocol.registerFileProtocol(protocolName, (request, callback) => {
+    const url = request.url.replace(`${protocolName}://`, '')
+    try {
+      return callback(decodeURIComponent(url))
+    }
+    catch (error) {
+      // Handle the error as needed
+      console.error(error)
+    }
+  })
 
 
 

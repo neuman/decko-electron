@@ -36,6 +36,7 @@
     "splitpanes": "^2.2.1",
     "vue": "^2.6.11",
     "vue-codemirror": "^4.0.6",
+    "vue-zoomer": "^0.3.6",
     "walkdir": "^0.4.1"
   },
   "devDependencies": {
