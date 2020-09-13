@@ -52,7 +52,7 @@ export function buildWebPage(css, scripts, body) {
     TEMPLATE: ["html"],
     STYLESHEET: ["css"],
     DATAFILE: ["json"],
-    IMAGE: ["jpg","jpeg","png"],
+    IMAGE: ["jpg","jpeg","png","svg"],
   };
 
   export const assetFilenames = {

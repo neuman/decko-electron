@@ -128,6 +128,7 @@ app.on('ready', async () => {
     }] : []),
     // { role: 'fileMenu' }
     {
+      id: 'file',
       label: 'File',
       submenu: [
         {
@@ -169,6 +170,7 @@ app.on('ready', async () => {
         { type: 'separator' },
         {
           label: 'Export All Pieces',
+          id:'export_all_pieces',
           enabled:false,
           click: function () {
             win.webContents.send('importAllData', '');
@@ -176,6 +178,7 @@ app.on('ready', async () => {
         },
         {
           label: 'Export Piece ',
+          id:'export_piece',
           click: function () {
             //generateServer(currentArg, true);
             win.webContents.send('exportOpenFile', '');

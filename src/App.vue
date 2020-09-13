@@ -17,6 +17,7 @@
             :id="item.id"
             :filePath="item.filePath"
             :depth="item.depth"
+            :active="item.active"
             @asset-selected="assetSelected"
           ></asset-list-item>
         </div>
@@ -44,8 +45,11 @@
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
           </div>
+          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'stylesheet'">
+            <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+          </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'image'">
-            <v-zoomer style="width: 100%; height: 100%; border: solid 1px silver;">
+            <v-zoomer style="width: 100%; height: 100%;">
               <img
                 v-bind:src="'safe-file-protocol:/'+this.rootDirectoryPath+this.selectedDirectoryListItem.filePath"
                 style="object-fit: contain; width: 100%; height: 100%;"
@@ -104,16 +108,21 @@ import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/addon/edit/matchtags.js";
+import "codemirror/addon/search/searchcursor.js";
+import "codemirror/addon/search/search.js";
+import "codemirror/addon/dialog/dialog.js";
+import "codemirror/addon/dialog/dialog.css";
 import "./theme/decko_codemirror.css";
 import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
-import VueZoomer from 'vue-zoomer'
+import VueZoomer from "vue-zoomer";
 const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
+var ls = require('list-directory-contents');
 
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
@@ -130,7 +139,7 @@ const menuItem = new MenuItem({
     getCurrentWebContents().inspectElement(x, y);
   },
 });
-contextMenu.append(menuItem);
+console.log("Menu.getApplicationMenu()", Menu.getApplicationMenu());
 //
 window.addEventListener(
   "contextmenu",
@@ -147,8 +156,9 @@ import {
   staticStrings,
   assetCategoryExtensions,
 } from "./utilitybelt.js";
+import { dirname } from "path";
 //import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
-Vue.use(VueZoomer)
+Vue.use(VueZoomer);
 export default {
   name: "App",
   components: {
@@ -158,7 +168,6 @@ export default {
     HotTable,
     Splitpanes,
     Pane,
-    
   },
   created: function () {
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -237,8 +246,12 @@ export default {
   },
   methods: {
     debugAction() {
-      getCurrentWebContents().send("setIframeURL", "http://www.google.com");
-      console.log(this.Assets);
+      var tree = [];
+      ls(__dirname, function (err, tree) {
+      })
+      console.log(tree);
+      //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
+      //console.log(this.Assets);
       /*
       console.log("global.__static", global.__static);
       console.log(
@@ -312,13 +325,19 @@ export default {
     },
     exportOpenFile() {
       this.previewOptions.doExport = true;
-      this.assetSelected(this.selectedPieceId, this.previewOptions);
+      this.assetSelected(
+        this.selectedDirectoryListItem.id,
+        this.previewOptions
+      );
       this.previewOptions.doExport = false;
     },
     magnetizeOpenFile() {
       this.previewOptions.doExport = false;
       this.previewOptions.doMagnetize = !this.previewOptions.doMagnetize;
-      this.assetSelected(this.selectedPieceId, this.previewOptions);
+      this.assetSelected(
+        this.selectedDirectoryListItem.id,
+        this.previewOptions
+      );
     },
     newProjectDialog() {
       dialog
@@ -458,7 +477,7 @@ export default {
                 file,
                 assetDepth
               );
-              newPiece.active = false;
+
             }
           });
         }
@@ -477,7 +496,7 @@ export default {
         fileName: fileName,
         filePath: path.join(directoryPath, fileName),
         sep: path.sep,
-        active: false,
+        active: true,
         singleton: false,
         depth: depth,
       };
@@ -541,6 +560,10 @@ export default {
       console.log(this.spreadsheet);
     },
     saveOpenFile() {
+      console.log(
+        "saveOpenFile",
+        path.join(this.rootDirectoryPath, this.openFile)
+      );
       fs.writeFileSync(
         path.join(this.rootDirectoryPath, this.openFile),
         this.msg
@@ -690,14 +713,15 @@ export default {
     assetSelected(id) {
       console.log("assetSelected", id);
       if (this.selectedDirectoryListItem != undefined) {
-        this.selectedDirectoryListItem.active = false;
+        //this.selectedDirectoryListItem.active = false;
       }
       this.selectedDirectoryListItem = this.getAssetById(id);
-      this.$set(this.selectedDirectoryListItem, "active", true);
+      //this.$set(this.selectedDirectoryListItem, "active", true);
       console.log(
         "this.selectedDirectoryListItem",
         this.selectedDirectoryListItem
       );
+      this.updateMenu();
       this.assetRender(id, false);
     },
     getAssetById(id) {
@@ -712,6 +736,17 @@ export default {
       });
       return match;
     },
+    updateMenu() {
+      if (this.selectedDirectoryListItem.category == assetCategories.TEMPLATE) {
+        Menu.getApplicationMenu()
+          .getMenuItemById("file")
+          .submenu.getMenuItemById("export_piece").enabled = true;
+      } else {
+        Menu.getApplicationMenu()
+          .getMenuItemById("file")
+          .submenu.getMenuItemById("export_piece").enabled = false;
+      }
+    },
     assetRender(id, arg) {
       var match = this.getAssetById(id);
 
@@ -723,8 +758,12 @@ export default {
         var fileExtension = this.getFileExtension(match.filePath);
         if (fileExtension == "json") {
           this.openFilePathInSpreadSheet(match.filePath);
+        } else if (match.category == assetCategories.STYLESHEET) {
+          this.cmOptions.mode = "css";
+          this.openFilePathInEditor(match.filePath);
         } else if (fileExtension == "html") {
-          console.log("openFilePathInEditor", match.filePath);
+          //console.log("openFilePathInEditor", match.filePath);
+          this.cmOptions.mode = "htmlmixed";
           this.openFilePathInEditor(match.filePath);
 
           //get template and read it
@@ -737,12 +776,12 @@ export default {
           var datafileContent = JSON.parse(
             this.loadFile(this.datafileFilePath)
           );
-          console.log(
+          /*console.log(
             "rendering template ",
             templateFilePath,
             "with data ",
             this.datafileFilePath
-          );
+          );*/
           this.previewOptions.html = "";
           //console.log("templateContent", templateContent);
           var template = Handlebars.compile(templateContent);
@@ -771,6 +810,7 @@ export default {
         } else if (match.category == assetCategories.DIRECTORY) {
           console.log("CLICKED DIRECTORY");
           this.getChildrenById(match.id).forEach((element) => {
+            console.log("hiding:", element)
             element.active = false;
           });
         }
