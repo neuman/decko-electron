@@ -1,5 +1,5 @@
 <template>
-  <div v-if="myActive == true" v-on:click="isClicked">
+  <div v-if="visible == true" v-on:click="isClicked">
     <div class="text-nowrap assetListItem" v-bind:class="{ assetListItemActive: myActive}" v-bind:style="{ 'padding-left': myIndentString+'px'}" :for="id">
       <font-awesome-icon :icon="myIconString" v-bind:style="{ 'color': myIconColor}"/>
       {{label}}
@@ -21,7 +21,9 @@ export default {
     volatile: { default: false, type: Boolean },
     id: { required: true, type: String },
     depth: { required: true, type: Number },
-    active: { default: true, type: Boolean },
+    active: { default: false, type: Boolean },
+    expanded: { required: true, default: true, type: Boolean },
+    visible: { required: true, default: true, type: Boolean },
   },
   data() {
     return {
@@ -36,6 +38,8 @@ export default {
       myIconColor: "#000",
       myIconString: "faFile",
       myActive: this.active,
+      myExpanded: this.expanded,
+      myVisible: this.visible,
     };
   },
   created: function () {
@@ -48,7 +52,11 @@ export default {
     assignColorIcon() {
       if (this.category == assetCategories.DIRECTORY) {
         this.myIconColor = "#fff";
+        if(this.expanded){
         this.myIconString = "chevron-down";
+        }else{
+          this.myIconString = "chevron-right";
+        }
       } else if (this.category == assetCategories.TEMPLATE) {
         this.myIconColor = "coral";
         this.myIconString = "code";

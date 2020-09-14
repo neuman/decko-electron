@@ -8,7 +8,7 @@
       </div>
     </b-modal>
     <splitpanes class="default-theme">
-      <pane size="15" class="bg-light overflow-y-handled">
+      <pane size="30" class="bg-light overflow-y-handled">
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
@@ -18,6 +18,8 @@
             :filePath="item.filePath"
             :depth="item.depth"
             :active="item.active"
+            :expanded="item.expanded"
+            :visible="item.visible"
             @asset-selected="assetSelected"
           ></asset-list-item>
         </div>
@@ -122,7 +124,7 @@ const createHtmlElement = require("create-html-element");
 var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
-var ls = require('list-directory-contents');
+var ls = require("list-directory-contents");
 
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
@@ -247,8 +249,7 @@ export default {
   methods: {
     debugAction() {
       var tree = [];
-      ls(__dirname, function (err, tree) {
-      })
+      ls(__dirname, function (err, tree) {});
       console.log(tree);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
@@ -465,6 +466,7 @@ export default {
                 file,
                 assetDepth
               );
+              newPiece.expanded = true;
               this.openDirectory(fileDirectoryPath, newPiece);
             } else {
               //console.log("directoryPath.replace(this.rootDirectoryPath,'')", directoryPath, this.rootDirectoryPath, directoryPath.replace(this.rootDirectoryPath,''))
@@ -477,7 +479,6 @@ export default {
                 file,
                 assetDepth
               );
-
             }
           });
         }
@@ -499,6 +500,8 @@ export default {
         active: true,
         singleton: false,
         depth: depth,
+        expanded: true,
+        visible:true,
       };
       if (parent != undefined) {
         this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
@@ -747,6 +750,34 @@ export default {
           .submenu.getMenuItemById("export_piece").enabled = false;
       }
     },
+    //set dir expandedness
+    //call this on it with makeVisible = expandedness
+    toggleDirectoryChildVisibility(id, makeVisible) {
+      var match = this.getAssetById(id);
+      console.log(
+        "toggleDirectoryChildVisibility(id, makeVisible) ",
+        match.id,
+        makeVisible
+      );
+      //for all children
+      this.getChildrenById(match.id).forEach((child) => {
+        child.visible = makeVisible;
+        //if child is dir
+        if (child.category == assetCategories.DIRECTORY) {
+          this.toggleDirectoryChildVisibility(child.id, makeVisible);
+        } else {
+          //if parent is expanded and makeVisible is true, show
+          if (match.expanded && makeVisible) {
+            console.log("showing: ", child.id);
+            child.visible = true;
+          } else {
+            //otherwise, hide
+            console.log("hiding: ", child.id);
+            child.visible = false;
+          }
+        }
+      });
+    },
     assetRender(id, arg) {
       var match = this.getAssetById(id);
 
@@ -809,10 +840,8 @@ export default {
           //console.log("rendered html", this.preview);
         } else if (match.category == assetCategories.DIRECTORY) {
           console.log("CLICKED DIRECTORY");
-          this.getChildrenById(match.id).forEach((element) => {
-            console.log("hiding:", element)
-            element.active = false;
-          });
+          match.expanded = !match.expanded;
+          this.toggleDirectoryChildVisibility(match.id, match.expanded);
         }
       }
     },
