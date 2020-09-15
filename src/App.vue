@@ -45,12 +45,29 @@
             </splitpanes>
           </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
+            <div>
+              <b-navbar toggleable="lg" type="dark" sticky="true">
+                <b-tabs content-class="mt-3">
+                  <div v-for="item in DataSheets" :key="item.id">
+                    <data-sheet-tab
+                      :label="item.label"
+                      :id="item.id"
+                      :active="item.active"
+                      @data-sheet-selected="dataSheetSelected"
+                    ></data-sheet-tab>
+                  </div>
+                </b-tabs>
+              </b-navbar>
+            </div>
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
           </div>
           <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'stylesheet'">
             <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
-          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'image'">
+          <div
+            class="h-100 checkered"
+            v-else-if="this.selectedDirectoryListItem.category == 'image'"
+          >
             <v-zoomer style="width: 100%; height: 100%;">
               <img
                 v-bind:src="'safe-file-protocol:/'+this.rootDirectoryPath+this.selectedDirectoryListItem.filePath"
@@ -102,6 +119,7 @@ Handlebars.registerHelper("if_lte", function (a, b, opts) {
 import Vue from "vue";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
+import DataSheetTab from "./components/DataSheetTab";
 import PreviewIframe from "./components/PreviewIframe";
 import fs from "fs";
 const { dialog } = require("electron").remote;
@@ -166,12 +184,27 @@ export default {
   components: {
     PreviewIframe,
     AssetListItem,
+    DataSheetTab,
     codemirror,
     HotTable,
     Splitpanes,
     Pane,
   },
   created: function () {
+    console.log("__dirname", __dirname);
+    console.log("process.cwd()", process.cwd());
+    var asarPath = this.getPublicPath("test.txt");
+    fs.readdir(__dirname, function (err, items) {
+      console.log(items);
+
+      for (var i = 0; i < items.length; i++) {
+        console.log(items[i]);
+      }
+    });
+
+    console.log("asarPath", asarPath);
+    console.log(this.loadFile(asarPath, true));
+
     electron.ipcRenderer.on("openProject", (event, arg) => {
       this.openProjectDialog();
     });
@@ -222,6 +255,7 @@ export default {
       selectedDirectoryListItem: undefined,
       openFile: undefined,
       Assets: [],
+      DataSheets: [],
       msg: undefined,
       spreadsheet: undefined,
       hotSettings: {
@@ -254,7 +288,7 @@ export default {
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
       /*
-      console.log("global.__static", global.__static);
+      console.log("global.__l", global.__static);
       console.log(
         this.loadFile(path.join(global.__static, "public", "milkcrate.js"))
       );
@@ -262,6 +296,13 @@ export default {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");*/
+    },
+    getPublicPath(relativePath) {
+      if (remote.app.isPackaged === false) {
+        return path.join(process.cwd(), "public", relativePath);
+      } else {
+        return path.join(__dirname, relativePath);
+      }
     },
     handlePaneEvent(name, event) {
       console.log(name, event);
@@ -501,13 +542,27 @@ export default {
         singleton: false,
         depth: depth,
         expanded: true,
-        visible:true,
+        visible: true,
       };
       if (parent != undefined) {
         this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
       } else {
         this.Assets.push(output);
       }
+      return output;
+    },
+    addDataSheet(label) {
+      var parentId = undefined;
+      if (parent != undefined) {
+        parentId = parent.id;
+      }
+      var output = {
+        id: uniqueId("data-tab-") + label,
+        label: label,
+        active: true,
+      };
+      this.DataSheets.push(output);
+
       return output;
     },
     openFilePathInEditor(filePath) {
@@ -551,9 +606,19 @@ export default {
 
       console.log(filePath);
       var output = this.loadFile(filePath);
-      //console.log(output);
-
-      this.spreadsheet = this.jsonArrayTo2D(JSON.parse(output));
+      var spreadsheetData = JSON.parse(output);
+      this.DataSheets = [];
+      for (var key in spreadsheetData) {
+        console.log(key + " -> " + spreadsheetData[key]);
+        this.addDataSheet(key);
+      }
+      console.log("this.DataSheets", this.DataSheets);
+      this.switchTabsInSpreadsheet(this.DataSheets[0].label);
+    },
+    switchTabsInSpreadsheet(label) {
+      var output = this.loadFile(this.openFile);
+      console.log(JSON.parse(output)[label]);
+      this.spreadsheet = this.jsonArrayTo2D(JSON.parse(output)[label]);
       if (this.$refs.deckoTable != undefined) {
         this.$refs.deckoTable.hotInstance.loadData(this.spreadsheet);
         this.$refs.deckoTable.hotInstance.updateSettings({
@@ -709,6 +774,10 @@ export default {
     },
     search(input) {
       return Object.keys(this).every((key) => input[key] === this[key]);
+    },
+    dataSheetSelected(label) {
+      console.log("dataSheetSelected", label);
+      this.switchTabsInSpreadsheet(label);
     },
     searchAssets(query) {
       return this.Assets.filter(this.search, query);

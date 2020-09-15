@@ -407,11 +407,11 @@ function generateServer(arg){
         console.log('got "/" building web page..');
         var jsFiles = [
           ///loadFile(path.join(rootDirectoryPath, 'jquery-3.5.1.min.js')),
-          loadFile(path.join(rootDirectoryPath, 'html2canvas.js')),
-          loadFile(path.join(rootDirectoryPath, 'canvas2image.js')),
+          loadFile(getPublicPath(path.join('iframe_assets','html2canvas.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets','canvas2image.js'))),
         ];
         jsFiles.push("var arg = "+JSON.stringify(arg));
-          jsFiles.push(loadFile(path.join(rootDirectoryPath, 'export.js')));
+          jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js'))));
         var html = buildWebPage(
           [
             loadFile(path.join(rootDirectoryPath, 'style.css')),
@@ -499,4 +499,12 @@ function buildWebPage(css, scripts, body) {
   })
 
   return '<!DOCTYPE html>' + html;
+}
+
+function getPublicPath(relativePath) {
+  if (app.isPackaged === false) {
+    return path.join(process.cwd(), "public", relativePath);
+  } else {
+    return path.join(__dirname, relativePath);
+  }
 }
