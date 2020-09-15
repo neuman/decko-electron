@@ -45,6 +45,9 @@ export default {
   created: function () {
     this.assignColorIcon();
   },
+  updated: function(){
+    this.assignColorIcon();
+  },
   methods: {
     isClicked() {
       this.$emit("asset-selected", this.id);

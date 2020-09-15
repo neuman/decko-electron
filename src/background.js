@@ -29,8 +29,8 @@ function createWindow() {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      webviewTag:true,
-      browserviewTag:true,
+      webviewTag: true,
+      browserviewTag: true,
       enableRemoteModule: true,
       allowRunningInsecureContent: true,
       webSecurity: false,
@@ -170,15 +170,15 @@ app.on('ready', async () => {
         { type: 'separator' },
         {
           label: 'Export All Pieces',
-          id:'export_all_pieces',
-          enabled:false,
+          id: 'export_all_pieces',
+          enabled: false,
           click: function () {
             win.webContents.send('importAllData', '');
           }
         },
         {
           label: 'Export Piece ',
-          id:'export_piece',
+          id: 'export_piece',
           click: function () {
             //generateServer(currentArg, true);
             win.webContents.send('exportOpenFile', '');
@@ -380,7 +380,7 @@ ipcMain.on('project-file-opened', (event, arg) => {
   event.returnValue = arg;
 })
 
-function generateServer(arg){
+function generateServer(arg) {
   port += 1;
   server = http.createServer((request, response) => {
     if (request.method == 'POST') {
@@ -406,24 +406,26 @@ function generateServer(arg){
       if (request.url == "/") {
         console.log('got "/" building web page..');
         var jsFiles = [
-          ///loadFile(path.join(rootDirectoryPath, 'jquery-3.5.1.min.js')),
-          loadFile(getPublicPath(path.join('iframe_assets','html2canvas.js'))),
-          loadFile(getPublicPath(path.join('iframe_assets','canvas2image.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets', 'jquery.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets', 'html2canvas.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets', 'canvas2image.js'))),
         ];
-        jsFiles.push("var arg = "+JSON.stringify(arg));
-          jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js'))));
+        jsFiles.push("var arg = " + JSON.stringify(arg));
+        jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js'))));
+        //var extracted = extractBlocks(arg.html, ["head"]);
         var html = buildWebPage(
           [
-            loadFile(path.join(rootDirectoryPath, 'style.css')),
-            loadFile(path.join(rootDirectoryPath, 'all.css')),
-            loadFile(path.join(rootDirectoryPath, 'custom.css'))
+            //loadFile(path.join(rootDirectoryPath, 'style.css')),
+            //loadFile(path.join(rootDirectoryPath, 'all.css')),
+            //loadFile(path.join(rootDirectoryPath, 'custom.css'))
           ],
           jsFiles,
-          arg.html);
+          arg.head,
+          arg.body);
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html');
         response.end(html);
-      } else if (request.url.split(".").pop() in ["css","js"] ) {
+      } else if (request.url.split(".").pop() in ["css", "js"]) {
         console.log('got filename, looking up...');
         response.statusCode = 200;
         console.log('Content-Type', mime.lookup(request.url.split("/").pop()));
@@ -433,7 +435,7 @@ function generateServer(arg){
         console.log('got other, looking up...');
         console.log(path.join(rootDirectoryPath, request.url));
         if ((fs.existsSync(path.join(rootDirectoryPath, request.url))) && (fs.lstatSync(path.join(rootDirectoryPath, request.url)).isDirectory() != true)) {
-          response.writeHead(200,{"Content-type":mime.lookup(request.url.split("/").pop())});
+          response.writeHead(200, { "Content-type": mime.lookup(request.url.split("/").pop()) });
           //response.end("Test");
           var stream = fs.createReadStream(path.join(rootDirectoryPath, request.url));
           stream.pipe(response);
@@ -461,7 +463,7 @@ ipcMain.on('piece-preview-opened', (event, arg) => {
   event.returnValue = arg;
 })
 
-function buildWebPage(css, scripts, body) {
+function buildWebPage(css, scripts, head, body) {
   var css_block = "";
   css.forEach(element => {
     css_block += createHtmlElement({
@@ -489,12 +491,12 @@ function buildWebPage(css, scripts, body) {
 
   var html = createHtmlElement({
     name: 'html',
-    attributes:{
+    attributes: {
       'pointer-events': 'none'
     },
     html: createHtmlElement({
       name: 'head',
-      html: css_block + scripts_block
+      html: css_block + scripts_block + head
     }) + body_block
   })
 

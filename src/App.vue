@@ -297,6 +297,28 @@ export default {
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");*/
     },
+    extractBlocks(html, blocks) {
+      //regex: {{\s?(#block+ )?head\s?}}(.|[\s\S]){{\s?\/(block)?\s?}}
+      let re = /{{\s?#block\s?([a-z]*)\s?}}(.*|[\s\S]*){{\s?\/block?\s?}}/g;
+      var output = {};
+      //for each block
+      blocks.forEach((block) => {
+        let match = re.exec(html);
+        do {
+          if (match != undefined) {
+            console.log("block", match[1], match[2]);
+            output[block] = match[2];
+            output["html"] = html.replace(match[0], "");
+          }else{
+            output["html"] = html;
+            output["head"] = "";
+          }
+        } while ((match = re.exec(html)) !== null);
+        //copy contents of block to output
+        //delete block from html
+      });
+      return output;
+    },
     getPublicPath(relativePath) {
       if (remote.app.isPackaged === false) {
         return path.join(process.cwd(), "public", relativePath);
@@ -882,10 +904,12 @@ export default {
             "with data ",
             this.datafileFilePath
           );*/
+          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
           this.previewOptions.html = "";
           //console.log("templateContent", templateContent);
-          var template = Handlebars.compile(templateContent);
-          this.previewOptions.html = template(datafileContent);
+          var template = Handlebars.compile(extractedTemplate.html);
+          this.previewOptions.body = template(datafileContent);
+          this.previewOptions.head = extractedTemplate.head;
 
           electron.ipcRenderer.send(
             "piece-preview-opened",
