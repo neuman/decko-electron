@@ -1,13 +1,19 @@
 <template>
   <div v-if="visible == true" v-on:click="isClicked">
-    <div class="text-nowrap assetListItem" v-bind:class="{ assetListItemActive: myActive}" v-bind:style="{ 'padding-left': myIndentString+'px'}" :for="id">
-      <font-awesome-icon :icon="myIconString" v-bind:style="{ 'color': myIconColor}"/>
+    <div
+      class="text-nowrap assetListItem"
+      v-bind:class="{ assetListItemActive: myActive}"
+      v-bind:style="{ 'padding-left': myIndentString+'px'}"
+      :for="id"
+    >
+      <font-awesome-icon :icon="getIcon" v-bind:style="{ 'color': getColor}" />
       {{label}}
     </div>
   </div>
 </template>
 
 <script>
+//import func from '../../../testvue/hello-world/vue-temp/vue-editor-bridge.js';
 import {
   assetCategories,
   assetFilenames,
@@ -42,40 +48,52 @@ export default {
       myVisible: this.visible,
     };
   },
-  created: function () {
-    this.assignColorIcon();
+  computed: {
+    getIcon: function () {
+      var icString = "";
+      if (this.category == assetCategories.DIRECTORY) {
+        if (this.expanded) {
+          icString = "chevron-down";
+        } else {
+          icString = "chevron-right";
+        }
+      } else if (this.category == assetCategories.TEMPLATE) {
+        icString = "code";
+      } else if (this.category == assetCategories.STYLESHEET) {
+        icString = "hashtag";
+      } else if (this.category == assetCategories.DATAFILE) {
+        icString = "database";
+      } else if (this.category == assetCategories.IMAGE) {
+        icString = "image";
+      } else {
+        icString = "file";
+      }
+      return icString;
+    },
+    getColor: function () {
+      var icColor = "";
+      if (this.category == assetCategories.DIRECTORY) {
+        icColor = "#fff";
+      } else if (this.category == assetCategories.TEMPLATE) {
+        icColor = "coral";
+      } else if (this.category == assetCategories.STYLESHEET) {
+        icColor = "lightskyblue";
+      } else if (this.category == assetCategories.DATAFILE) {
+        icColor = "lightgreen";
+      } else if (this.category == assetCategories.IMAGE) {
+        icColor = "teal";
+      } else {
+        icColor = "#fff";
+      }
+      return icColor;
+    },
   },
-  updated: function(){
-    this.assignColorIcon();
+  created: function () {
+    //this.assignColorIcon();
   },
   methods: {
     isClicked() {
       this.$emit("asset-selected", this.id);
-    },
-    assignColorIcon() {
-      if (this.category == assetCategories.DIRECTORY) {
-        this.myIconColor = "#fff";
-        if(this.expanded){
-        this.myIconString = "chevron-down";
-        }else{
-          this.myIconString = "chevron-right";
-        }
-      } else if (this.category == assetCategories.TEMPLATE) {
-        this.myIconColor = "coral";
-        this.myIconString = "code";
-      } else if (this.category == assetCategories.STYLESHEET) {
-        this.myIconColor = "lightskyblue";
-        this.myIconString = "hashtag";
-      } else if (this.category == assetCategories.DATAFILE) {
-        this.myIconColor = "lightgreen";
-        this.myIconString = "database";
-      }else if (this.category == assetCategories.IMAGE) {
-        this.myIconColor = "teal";
-        this.myIconString = "image";
-      } else {
-        this.myIconColor = "#fff";
-        this.myIconString = "file";
-      }
     },
   },
 };

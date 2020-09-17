@@ -70,7 +70,7 @@
           >
             <v-zoomer style="width: 100%; height: 100%;">
               <img
-                v-bind:src="'safe-file-protocol:/'+this.rootDirectoryPath+this.selectedDirectoryListItem.filePath"
+                v-bind:src="this.selectedLocalFile"
                 style="object-fit: contain; width: 100%; height: 100%;"
               />
             </v-zoomer>
@@ -883,7 +883,10 @@ export default {
         } else if (match.category == assetCategories.STYLESHEET) {
           this.cmOptions.mode = "css";
           this.openFilePathInEditor(match.filePath);
-        } else if (fileExtension == "html") {
+        } else if (match.category == assetCategories.IMAGE) {
+          this.selectedLocalFile = 'safe-file-protocol://'+path.join(this.rootDirectoryPath,this.selectedDirectoryListItem.filePath);
+        }
+        else if (fileExtension == "html") {
           //console.log("openFilePathInEditor", match.filePath);
           this.cmOptions.mode = "htmlmixed";
           this.openFilePathInEditor(match.filePath);
