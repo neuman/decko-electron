@@ -44,6 +44,7 @@ export function buildWebPage(css, scripts, body) {
     DATAFILE: "datafile",
     IMAGE:"image",
     OTHER: "other",
+    BOX:"box",
   };
   
 
@@ -53,6 +54,7 @@ export function buildWebPage(css, scripts, body) {
     STYLESHEET: ["css"],
     DATAFILE: ["json"],
     IMAGE: ["jpg","jpeg","png","svg"],
+    BOX: ["dkob"],
   };
 
   export const assetFilenames = {
@@ -61,7 +63,52 @@ export function buildWebPage(css, scripts, body) {
     STYLESHEET: "stylesheet.css",
     DATAFILE: "datafile.json",
   };
+
+  export function getAssetCategory(fileName) {
+    var output = "";
+    if (
+      assetCategoryExtensions.DIRECTORY.includes(
+        getFileExtension(fileName)
+      )
+    ) {
+      return assetCategories.DIRECTORY;
+    } else if (
+      assetCategoryExtensions.TEMPLATE.includes(
+        getFileExtension(fileName)
+      )
+    ) {
+      return assetCategories.TEMPLATE;
+    } else if (
+      assetCategoryExtensions.STYLESHEET.includes(
+        getFileExtension(fileName)
+      )
+    ) {
+      return assetCategories.STYLESHEET;
+    } else if (
+      assetCategoryExtensions.DATAFILE.includes(
+        getFileExtension(fileName)
+      )
+    ) {
+      return assetCategories.DATAFILE;
+    } else if (
+      assetCategoryExtensions.BOX.includes(
+        getFileExtension(fileName)
+      )
+    ) {
+      return assetCategories.BOX;
+    } else if (
+      assetCategoryExtensions.IMAGE.includes(getFileExtension(fileName))
+    ) {
+      return assetCategories.IMAGE;
+    } else {
+      return assetCategories.OTHER;
+    }
+  }
   
   export const staticStrings = {
     DECKODIRNAME: "decko",
   };
+
+  export function getFileExtension(filePath) {
+    return filePath.split(".").pop();
+  }

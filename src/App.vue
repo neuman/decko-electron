@@ -26,7 +26,7 @@
       </pane>
       <pane class="bg-dark">
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
-          <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'">
+          <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'||'box'">
             <splitpanes
               class="default-theme"
               @resize="handlePaneEvent('resize', $event)"
@@ -175,6 +175,8 @@ import {
   assetFilenames,
   staticStrings,
   assetCategoryExtensions,
+  getAssetCategory,
+  getFileExtension,
 } from "./utilitybelt.js";
 import { dirname } from "path";
 //import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
@@ -191,7 +193,10 @@ export default {
     Pane,
   },
   created: function () {
-    console.log("__dirname", __dirname);
+    if (process.env.NODE_ENV == 'development') {
+      this.openProjectFile('/home/neuman/TEST/project.dko')
+    }
+    /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
     var asarPath = this.getPublicPath("test.txt");
     fs.readdir(__dirname, function (err, items) {
@@ -203,32 +208,40 @@ export default {
     });
 
     console.log("asarPath", asarPath);
-    console.log(this.loadFile(asarPath, true));
-
+    console.log(this.loadFile(asarPath, true));*/
+    electron.ipcRenderer.removeAllListeners("openProject");
     electron.ipcRenderer.on("openProject", (event, arg) => {
       this.openProjectDialog();
     });
+    electron.ipcRenderer.removeAllListeners("newProject");
     electron.ipcRenderer.on("newProject", (event, arg) => {
       this.newProjectDialog();
     });
+    electron.ipcRenderer.removeAllListeners("saveProject");
     electron.ipcRenderer.on("saveProject", (event, arg) => {
       this.saveProject();
     });
+    electron.ipcRenderer.removeAllListeners("saveOpenFile");
     electron.ipcRenderer.on("saveOpenFile", (event, arg) => {
       this.saveOpenFile();
     });
+    electron.ipcRenderer.removeAllListeners("importAllData");
     electron.ipcRenderer.on("importAllData", (event, arg) => {
       this.showImportAllWarning();
     });
+    electron.ipcRenderer.removeAllListeners("exportOpenFile");
     electron.ipcRenderer.on("exportOpenFile", (event, arg) => {
       this.exportOpenFile();
     });
+    electron.ipcRenderer.removeAllListeners("magnetizeOpenFile");
     electron.ipcRenderer.on("magnetizeOpenFile", (event, arg) => {
       this.magnetizeOpenFile();
     });
+    electron.ipcRenderer.removeAllListeners("debugAction");
     electron.ipcRenderer.on("debugAction", (event, arg) => {
       this.debugAction();
     });
+    electron.ipcRenderer.removeAllListeners("openWebViewDevTools");
     electron.ipcRenderer.on("openWebViewDevTools", (event, arg) => {
       document.querySelector("webview").openDevTools();
     });
@@ -282,9 +295,7 @@ export default {
   },
   methods: {
     debugAction() {
-      var tree = [];
-      ls(__dirname, function (err, tree) {});
-      console.log(tree);
+      console.log(this.Assets);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
       /*
@@ -306,10 +317,10 @@ export default {
         let match = re.exec(html);
         do {
           if (match != undefined) {
-            console.log("block", match[1], match[2]);
+            //console.log("block", match[1], match[2]);
             output[block] = match[2];
             output["html"] = html.replace(match[0], "");
-          }else{
+          } else {
             output["html"] = html;
             output["head"] = "";
           }
@@ -327,7 +338,7 @@ export default {
       }
     },
     handlePaneEvent(name, event) {
-      console.log(name, event);
+      //(name, event);
       if (name == "resize") {
         this.paneDragging = true;
       } else {
@@ -336,43 +347,6 @@ export default {
     },
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
-    },
-    getAssetCategory(fileName) {
-      var output = "";
-      if (
-        assetCategoryExtensions.DIRECTORY.includes(
-          this.getFileExtension(fileName)
-        )
-      ) {
-        return assetCategories.DIRECTORY;
-      } else if (
-        assetCategoryExtensions.TEMPLATE.includes(
-          this.getFileExtension(fileName)
-        )
-      ) {
-        return assetCategories.TEMPLATE;
-      } else if (
-        assetCategoryExtensions.STYLESHEET.includes(
-          this.getFileExtension(fileName)
-        )
-      ) {
-        return assetCategories.STYLESHEET;
-      } else if (
-        assetCategoryExtensions.DATAFILE.includes(
-          this.getFileExtension(fileName)
-        )
-      ) {
-        return assetCategories.DATAFILE;
-      } else if (
-        assetCategoryExtensions.IMAGE.includes(this.getFileExtension(fileName))
-      ) {
-        return assetCategories.IMAGE;
-      } else {
-        return assetCategories.OTHER;
-      }
-    },
-    getFileExtension(filePath) {
-      return filePath.split(".").pop();
     },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
@@ -435,12 +409,14 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
-          this.rootDirectoryPath = path.dirname(filePath);
-          this.datafileFilePath = path.join("decko", "datafile.json");
+          
+          
           this.openProjectFile(filePath);
         });
     },
     openProjectFile(filePath) {
+      this.datafileFilePath = path.join("decko", "datafile.json");
+      this.rootDirectoryPath = path.dirname(filePath);
       //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
       if (this.sep != path.sep) {
@@ -520,15 +496,19 @@ export default {
               assetDepth = parentAsset.depth + 1;
             }
             if (fs.lstatSync(fileDirectoryPath).isDirectory()) {
+              console.log("isDirectory", fileDirectoryPath);
               //add as dir
               newPiece = this.addAsset(
                 parentAsset,
                 assetCategories.DIRECTORY,
-                directoryPath.replace(this.rootDirectoryPath, ""),
+                fileDirectoryPath,
                 assetFilenames.DIRECTORY,
                 file,
                 assetDepth
               );
+              if (newPiece != undefined) {
+                console.log("piece undefined", fileDirectoryPath);
+              }
               newPiece.expanded = true;
               this.openDirectory(fileDirectoryPath, newPiece);
             } else {
@@ -536,7 +516,7 @@ export default {
               //add as file
               newPiece = this.addAsset(
                 parentAsset,
-                this.getAssetCategory(file),
+                getAssetCategory(file),
                 directoryPath.replace(this.rootDirectoryPath, ""),
                 file,
                 file,
@@ -552,8 +532,9 @@ export default {
       if (parent != undefined) {
         parentId = parent.id;
       }
+      //console.log('adding', path.join(directoryPath, fileName))
       var output = {
-        id: uniqueId("asset-") + label,
+        id: path.join(directoryPath, fileName),
         parentId: parentId,
         category: category,
         label: label,
@@ -566,12 +547,17 @@ export default {
         expanded: true,
         visible: true,
       };
-      if (parent != undefined) {
-        this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
+      var testMatch = this.getAssetById(output.id);
+      if (testMatch == undefined) {
+        if (parent != undefined) {
+          this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
+        } else {
+          this.Assets.push(output);
+        }
+        return output;
       } else {
-        this.Assets.push(output);
+        return undefined;
       }
-      return output;
     },
     addDataSheet(label) {
       var parentId = undefined;
@@ -859,11 +845,11 @@ export default {
         } else {
           //if parent is expanded and makeVisible is true, show
           if (match.expanded && makeVisible) {
-            console.log("showing: ", child.id);
+            //console.log("showing: ", child.id);
             child.visible = true;
           } else {
             //otherwise, hide
-            console.log("hiding: ", child.id);
+            //console.log("hiding: ", child.id);
             child.visible = false;
           }
         }
@@ -877,42 +863,54 @@ export default {
       if (match.parentId != undefined) {
         this.selectedPieceId = match.parentId;
         this.previewOptions.html = undefined;
-        var fileExtension = this.getFileExtension(match.filePath);
+        var fileExtension = getFileExtension(match.filePath);
         if (fileExtension == "json") {
           this.openFilePathInSpreadSheet(match.filePath);
         } else if (match.category == assetCategories.STYLESHEET) {
           this.cmOptions.mode = "css";
           this.openFilePathInEditor(match.filePath);
         } else if (match.category == assetCategories.IMAGE) {
-          this.selectedLocalFile = 'safe-file-protocol://'+path.join(this.rootDirectoryPath,this.selectedDirectoryListItem.filePath);
-        }
-        else if (fileExtension == "html") {
-          //console.log("openFilePathInEditor", match.filePath);
-          this.cmOptions.mode = "htmlmixed";
-          this.openFilePathInEditor(match.filePath);
+          this.selectedLocalFile =
+            "safe-file-protocol://" +
+            path.join(
+              this.rootDirectoryPath,
+              this.selectedDirectoryListItem.filePath
+            );
+        } else if (
+          (fileExtension == "html") || (match.category == assetCategories.BOX))
+         {
+          if (match.category == assetCategories.TEMPLATE) {
+            //console.log("openFilePathInEditor", match.filePath);
+            this.cmOptions.mode = "htmlmixed";
+            this.openFilePathInEditor(match.filePath);
 
-          //get template and read it
-          this.selectedPieceId = match.id;
-          //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-          var templateFilePath = match.filePath;
-          var templateContent = this.loadFile(templateFilePath);
+            //get template and read it
+            this.selectedPieceId = match.id;
+            //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
+            var templateFilePath = match.filePath;
+            var templateContent = this.loadFile(templateFilePath);
 
-          //read datafile
-          var datafileContent = JSON.parse(
-            this.loadFile(this.datafileFilePath)
-          );
-          /*console.log(
-            "rendering template ",
-            templateFilePath,
-            "with data ",
-            this.datafileFilePath
-          );*/
-          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
-          this.previewOptions.html = "";
-          //console.log("templateContent", templateContent);
-          var template = Handlebars.compile(extractedTemplate.html);
-          this.previewOptions.body = template(datafileContent);
-          this.previewOptions.head = extractedTemplate.head;
+            //read datafile
+            var datafileContent = JSON.parse(
+              this.loadFile(this.datafileFilePath)
+            );
+            var extractedTemplate = this.extractBlocks(templateContent, [
+              "head",
+            ]);
+            this.previewOptions.html = "";
+            //console.log("templateContent", templateContent);
+            var template = Handlebars.compile(extractedTemplate.html);
+            this.previewOptions.body = template(datafileContent);
+            this.previewOptions.head = extractedTemplate.head;
+          } else if (match.category == assetCategories.BOX) {
+            this.cmOptions.mode = "htmlmixed";
+            this.openFilePathInEditor(match.filePath);
+
+            //get template and read it
+            this.selectedPieceId = match.id;
+            this.previewOptions.body = "test";
+            this.previewOptions.box = this.loadFile(match.filePath);
+          }
 
           electron.ipcRenderer.send(
             "piece-preview-opened",
@@ -935,7 +933,7 @@ export default {
 
           //console.log("rendered html", this.preview);
         } else if (match.category == assetCategories.DIRECTORY) {
-          console.log("CLICKED DIRECTORY");
+          //console.log("CLICKED DIRECTORY");
           match.expanded = !match.expanded;
           this.toggleDirectoryChildVisibility(match.id, match.expanded);
         }

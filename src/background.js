@@ -409,19 +409,28 @@ function generateServer(arg) {
           loadFile(getPublicPath(path.join('iframe_assets', 'jquery.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'html2canvas.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'canvas2image.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets', 'three.min.js'))),
+          //loadFile(getPublicPath(path.join('iframe_assets', 'orbit.js'))),
         ];
-        jsFiles.push("var arg = " + JSON.stringify(arg));
-        jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js'))));
+        jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js',))));
         //var extracted = extractBlocks(arg.html, ["head"]);
-        var html = buildWebPage(
-          [
-            //loadFile(path.join(rootDirectoryPath, 'style.css')),
-            //loadFile(path.join(rootDirectoryPath, 'all.css')),
-            //loadFile(path.join(rootDirectoryPath, 'custom.css'))
-          ],
+        var html = "";
+        if(arg.box == undefined){
+          jsFiles.push("var arg = " + JSON.stringify(arg));
+        html = buildWebPage(
+          [],
           jsFiles,
           arg.head,
           arg.body);
+        }else{
+          jsFiles.push("var box = " + JSON.stringify(arg));
+          arg.doBox = true;
+          html = buildWebPage(
+            [],
+            jsFiles,
+            arg.head,
+            "<canvas id='threeCanvas' style=' width: 100%; height: 100%;'></canvas>");
+        }
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html');
         response.end(html);
