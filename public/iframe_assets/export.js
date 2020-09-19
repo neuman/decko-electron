@@ -86,83 +86,144 @@ export_all = function () {
   }
   doNext();
 }
+var renderer;
+render_box = function () {
+  const canvas = document.querySelector('#threeCanvas');
+  //var context = canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
+  renderer = new THREE.WebGLRenderer({ canvas, preserveDrawingBuffer: true, alpha: true });
 
-render_box = function(){
-// ------------------------------------------------
-// BASIC SETUP
-// ------------------------------------------------
+  const fov = 75;
+  const aspect = 4;  // the canvas default
+  const near = 0.1;
+  const far = 5;
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.z = arg.box.camera.z;
+  camera.position.x = arg.box.camera.x;
+  camera.position.y = arg.box.camera.y;
 
-// Create an empty scene
-var scene = new THREE.Scene();
+  var controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-// Create a basic perspective camera
-var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
-camera.position.z = 4;
 
-// Create a renderer with Antialiasing
-var renderer = new THREE.WebGLRenderer({canvas:document.getElementById('threeCanvas'), antialias:true});
+  const scene = new THREE.Scene();
+  window.scene = scene;
+  window.camera = camera;
 
-// Configure renderer clear color
-renderer.setClearColor("#000000");
+  const cubes = [];  // just an array we can use to rotate the cubes
+  const loadManager = new THREE.LoadingManager();
+  const loader = new THREE.TextureLoader(loadManager);
+  var frontTexture = loader.load(arg.box.front);
+  var topTexture = loader.load(arg.box.top);
+  var bottomTexture = loader.load(arg.box.bottom);
+  var backTexture = loader.load(arg.box.back);
+  var leftTexture = loader.load(arg.box.left);
+  leftTexture.rotation = -90;
+  var rightTexture = loader.load(arg.box.right);
+  var materials = [
+    new THREE.MeshBasicMaterial({ map: frontTexture }),
+    new THREE.MeshBasicMaterial({ map: backTexture }),
+    new THREE.MeshBasicMaterial({ map: topTexture }),
+    new THREE.MeshBasicMaterial({ map: bottomTexture }),
+    new THREE.MeshBasicMaterial({ map: leftTexture }),
+    new THREE.MeshBasicMaterial({ map: rightTexture })
+  ];
+  var faceMaterial = new THREE.MeshFaceMaterial(materials);
+  loadManager.onLoad = () => {
+  
+    var boxFrontHeight;
+    var boxFrontWidth;
+    if(frontTexture.image.width < frontTexture.image.height){
+      boxFrontWidth = 1;
+      boxFrontHeight = frontTexture.image.width / frontTexture.image.height;
+    }else{
+      boxFrontWidth = frontTexture.image.height / frontTexture.image.width;
+      boxFrontHeight = 1;
+    }
 
-// Configure renderer size
-renderer.setSize( window.innerWidth, window.innerHeight );
+    const boxWidth = frontTexture.image.width;
+    const boxHeight = frontTexture.image.height;
+    const boxDepth = 1;
+    const geometry = new THREE.BoxBufferGeometry(boxFrontWidth, boxFrontHeight, boxDepth);
 
-// Append Renderer to DOM
-document.body.appendChild( renderer.domElement );
+    const cube = new THREE.Mesh(geometry, faceMaterial);
+    scene.add(cube);
+    console.log("add cube");
+    cubes.push(cube);  // add to our list of cubes to rotate
+  };
 
-// ------------------------------------------------
-// FUN STARTS HERE
-// ------------------------------------------------
 
-// Create a Cube Mesh with basic material
-var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-var material = new THREE.MeshBasicMaterial( { color: "#433F81" } );
-var cube = new THREE.Mesh( geometry, material );
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
+  }
 
-// Add cube to Scene
-scene.add( cube );
+  function render(time) {
+    time *= 0.001;
 
-// Render Loop
-var render = function () {
-  requestAnimationFrame( render );
+    if (resizeRendererToDisplaySize(renderer)) {
+      const canvas = renderer.domElement;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+    }
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
+    controls.update();
 
-  // Render the scene
-  renderer.render(scene, camera);
-};
+    requestAnimationFrame(render);
+  }
 
-render();
+  requestAnimationFrame(render);
 }
 
 $(document).ready(function () {
-  if(arg != undefined){
   console.log('arg', arg);
-  }
+  if (arg.body != undefined) {
 
-
-  if(box != undefined){
-    console.log('box', box);
+    if (arg.doMagnetize) {
+      console.log("doMagnetize == true");
+      magnetize();
     }
+    if (arg.doExport) {
+      export_all();
+    } else {
+      $('body').children().attr("float", "left");
+    }
+  }
 
   console.log("inside iframe loaded")
   parent.console.log("inside iframe loaded TRANS")
-  if (arg.doMagnetize) {
-    console.log("doMagnetize == true");
-    magnetize();
-  }
-  if (arg.doExport) {
-    export_all();
-  }else{
-    $('body').children().attr("float","left");
-  }
-  if (arg.doBox) {
+
+  if (arg.box != undefined) {
     console.log("doBox == true");
     render_box();
+    if (arg.doExport) {
+      window.setTimeout(function () {
+        var dataURL = renderer.domElement.toDataURL();
+        $.ajax({
+          type: "POST",
+          url: "/" + "box_cover",
+          data: {
+            imgBase64: dataURL
+          }
+        }).done(function (o) {
+          console.log('saved');
+          // If you want the file to be visible in the browser 
+          // - please modify the callback in javascript. All you
+          // need is to return the url to the file, you just saved 
+          // and than put the image in your browser.
+        });
+      }, 100);
+
+
+    }
+
   }
-  
+
 
   const { ipcRenderer } = require('electron')
   ipcRenderer.on('pinga', () => {
@@ -170,15 +231,15 @@ $(document).ready(function () {
   })
 
   window.addEventListener(
-  "contextmenu",
+    "contextmenu",
     (event) => {
       event.preventDefault();
       rightClickPosition = { x: event.x, y: event.y };
       console.log(rightClickPosition)
-      ipcRenderer.sendToHost(JSON.stringify({x:event.x, y:event.y}))
+      ipcRenderer.sendToHost(JSON.stringify({ x: event.x, y: event.y }))
     },
     false
-);
+  );
 
 
 });

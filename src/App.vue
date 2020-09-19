@@ -26,7 +26,7 @@
       </pane>
       <pane class="bg-dark">
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
-          <div class="h-100" v-if="this.selectedDirectoryListItem.category == 'template'||'box'">
+          <div class="h-100" v-if="['box','template'].includes(this.selectedDirectoryListItem.category)">
             <splitpanes
               class="default-theme"
               @resize="handlePaneEvent('resize', $event)"
@@ -496,7 +496,7 @@ export default {
               assetDepth = parentAsset.depth + 1;
             }
             if (fs.lstatSync(fileDirectoryPath).isDirectory()) {
-              console.log("isDirectory", fileDirectoryPath);
+              //console.log("isDirectory", fileDirectoryPath);
               //add as dir
               newPiece = this.addAsset(
                 parentAsset,
@@ -507,7 +507,7 @@ export default {
                 assetDepth
               );
               if (newPiece != undefined) {
-                console.log("piece undefined", fileDirectoryPath);
+                //console.log("piece undefined", fileDirectoryPath);
               }
               newPiece.expanded = true;
               this.openDirectory(fileDirectoryPath, newPiece);
@@ -817,14 +817,14 @@ export default {
       return match;
     },
     updateMenu() {
-      if (this.selectedDirectoryListItem.category == assetCategories.TEMPLATE) {
+      if (this.selectedDirectoryListItem.category == (assetCategories.TEMPLATE || assetCategories.BOX)) {
         Menu.getApplicationMenu()
           .getMenuItemById("file")
           .submenu.getMenuItemById("export_piece").enabled = true;
       } else {
         Menu.getApplicationMenu()
           .getMenuItemById("file")
-          .submenu.getMenuItemById("export_piece").enabled = false;
+          //.submenu.getMenuItemById("export_piece").enabled = false;
       }
     },
     //set dir expandedness
@@ -902,14 +902,15 @@ export default {
             var template = Handlebars.compile(extractedTemplate.html);
             this.previewOptions.body = template(datafileContent);
             this.previewOptions.head = extractedTemplate.head;
+            this.previewOptions.box = undefined;
           } else if (match.category == assetCategories.BOX) {
             this.cmOptions.mode = "htmlmixed";
             this.openFilePathInEditor(match.filePath);
 
             //get template and read it
             this.selectedPieceId = match.id;
-            this.previewOptions.body = "test";
-            this.previewOptions.box = this.loadFile(match.filePath);
+            this.previewOptions.body = undefined;
+            this.previewOptions.box = JSON.parse(this.loadFile(match.filePath));
           }
 
           electron.ipcRenderer.send(
