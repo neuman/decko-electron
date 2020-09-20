@@ -101,7 +101,7 @@ render_box = function () {
   camera.position.x = arg.box.camera.x;
   camera.position.y = arg.box.camera.y;
 
-  var controls = new THREE.OrbitControls( camera, renderer.domElement );
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
 
 
   const scene = new THREE.Scene();
@@ -116,7 +116,7 @@ render_box = function () {
   var bottomTexture = loader.load(arg.box.bottom);
   var backTexture = loader.load(arg.box.back);
   var leftTexture = loader.load(arg.box.left);
-  leftTexture.rotation = -90;
+  //backTexture.rotation = 10;
   var rightTexture = loader.load(arg.box.right);
   var materials = [
     new THREE.MeshBasicMaterial({ map: frontTexture }),
@@ -126,15 +126,29 @@ render_box = function () {
     new THREE.MeshBasicMaterial({ map: leftTexture }),
     new THREE.MeshBasicMaterial({ map: rightTexture })
   ];
+
+  materials.forEach(element => {
+    element.map.wrapS = element.map.wrapT = THREE.RepeatWrapping;
+    element.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    element.map.repeat.set(1, 1);
+  });
   var faceMaterial = new THREE.MeshFaceMaterial(materials);
   loadManager.onLoad = () => {
-  
+    console.log(materials);
+    materials[2].map.rotation = THREE.MathUtils.degToRad(-90);
+    materials[2].needsUpdate = true;
+    materials[3].map.rotation = THREE.MathUtils.degToRad(-90);
+    materials[3].needsUpdate = true;
+    materials[4].map.rotation = THREE.MathUtils.degToRad(-90);
+    materials[4].needsUpdate = true;
+    materials[5].map.rotation = THREE.MathUtils.degToRad(90);
+    materials[5].needsUpdate = true;
     var boxFrontHeight;
     var boxFrontWidth;
-    if(frontTexture.image.width < frontTexture.image.height){
+    if (frontTexture.image.width < frontTexture.image.height) {
       boxFrontWidth = 1;
       boxFrontHeight = frontTexture.image.width / frontTexture.image.height;
-    }else{
+    } else {
       boxFrontWidth = frontTexture.image.height / frontTexture.image.width;
       boxFrontHeight = 1;
     }
