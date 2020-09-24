@@ -26,14 +26,17 @@
       </pane>
       <pane class="bg-dark">
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
-          <div class="h-100" v-if="['box','template'].includes(this.selectedDirectoryListItem.category)">
+          <div
+            class="h-100"
+            v-if="['box','template'].includes(this.selectedDirectoryListItem.category)"
+          >
             <splitpanes
               class="default-theme"
               @resize="handlePaneEvent('resize', $event)"
               @resized="handlePaneEvent('resized', $event)"
             >
               <pane>
-                <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+                <codemirror ref="editor" class="h-100" v-model="msg" :options="cmOptions"></codemirror>
               </pane>
               <pane>
                 <div
@@ -61,8 +64,11 @@
             </div>
             <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
           </div>
-          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'stylesheet'">
-            <codemirror class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+          <div
+            class="h-100"
+            v-if="['stylesheet','json','text'].includes(this.selectedDirectoryListItem.category)"
+          >
+            <codemirror ref="editor" class="h-100" v-model="msg" :options="cmOptions"></codemirror>
           </div>
           <div
             class="h-100 checkered"
@@ -93,6 +99,7 @@
 1
 <script>
 const Handlebars = require("handlebars");
+var $ = require("jquery");
 var markdown = require("helper-markdown");
 Handlebars.registerHelper("markdown", markdown({}));
 Handlebars.registerHelper("if_eq", function (a, b, opts) {
@@ -127,6 +134,8 @@ const electron = require("electron");
 import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
+import "codemirror/mode/javascript/javascript.js";
+import "codemirror-formatting"
 import "codemirror/addon/edit/matchtags.js";
 import "codemirror/addon/search/searchcursor.js";
 import "codemirror/addon/search/search.js";
@@ -161,7 +170,7 @@ const menuItem = new MenuItem({
 });
 console.log("Menu.getApplicationMenu()", Menu.getApplicationMenu());
 //
-window.addEventListener(
+/*window.addEventListener(
   "contextmenu",
   (event) => {
     event.preventDefault();
@@ -169,7 +178,7 @@ window.addEventListener(
     contextMenu.popup();
   },
   false
-);
+);*/
 import {
   assetCategories,
   assetFilenames,
@@ -193,8 +202,8 @@ export default {
     Pane,
   },
   created: function () {
-    if (process.env.NODE_ENV == 'development') {
-      this.openProjectFile('/home/neuman/TEST/project.dko')
+    if (process.env.NODE_ENV == "development") {
+      this.openProjectFile("/home/neuman/TEST/project.dko");
     }
     /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
@@ -236,6 +245,10 @@ export default {
     electron.ipcRenderer.removeAllListeners("magnetizeOpenFile");
     electron.ipcRenderer.on("magnetizeOpenFile", (event, arg) => {
       this.magnetizeOpenFile();
+    });
+    electron.ipcRenderer.removeAllListeners("formatOpenFile");
+    electron.ipcRenderer.on("formatOpenFile", (event, arg) => {
+      this.formatOpenFile();
     });
     electron.ipcRenderer.removeAllListeners("debugAction");
     electron.ipcRenderer.on("debugAction", (event, arg) => {
@@ -377,6 +390,12 @@ export default {
         this.previewOptions
       );
     },
+    formatOpenFile(){
+if (this.$refs.editor != undefined) {
+  console.log(this.$refs.editor);
+  this.$refs.editor.codemirror.autoFormatRange(this.$refs.editor.codemirror.getCursor(true), this.$refs.editor.codemirror.getCursor(false));
+}
+    },
     newProjectDialog() {
       dialog
         .showOpenDialog({
@@ -409,13 +428,12 @@ export default {
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var filePath = filenames.filePaths[0];
-          
-          
+
           this.openProjectFile(filePath);
         });
     },
     openProjectFile(filePath) {
-      this.datafileFilePath = path.join("decko", "datafile.json");
+      this.datafileFilePath = path.join("decko", "datafile.dkod");
       this.rootDirectoryPath = path.dirname(filePath);
       //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
@@ -442,8 +460,9 @@ export default {
           console.log("tempThis", tempThis);
           tempThis.handleFileChange(pathIn);
           if (
-            tempThis.selectedDirectoryListItem.category ==
-            assetCategories.TEMPLATE
+            [assetCategories.TEMPLATE, assetCategories.BOX].includes(
+              tempThis.selectedDirectoryListItem.category
+            )
           ) {
             console.log(pathIn, "has been changed");
             console.log(
@@ -476,8 +495,8 @@ export default {
         assetCategories.DIRECTORY,
         directoryPath,
         assetFilenames.DIRECTORY,
-        path.dirname(directoryPath),
-        1
+        path.basename(this.rootDirectoryPath),
+        0
       );
       this.openDirectory(directoryPath, rootAsset);
     },
@@ -817,14 +836,16 @@ export default {
       return match;
     },
     updateMenu() {
-      if (this.selectedDirectoryListItem.category == (assetCategories.TEMPLATE || assetCategories.BOX)) {
+      if (
+        this.selectedDirectoryListItem.category ==
+        (assetCategories.TEMPLATE || assetCategories.BOX)
+      ) {
         Menu.getApplicationMenu()
           .getMenuItemById("file")
           .submenu.getMenuItemById("export_piece").enabled = true;
       } else {
-        Menu.getApplicationMenu()
-          .getMenuItemById("file")
-          //.submenu.getMenuItemById("export_piece").enabled = false;
+        Menu.getApplicationMenu().getMenuItemById("file");
+        //.submenu.getMenuItemById("export_piece").enabled = false;
       }
     },
     //set dir expandedness
@@ -864,10 +885,16 @@ export default {
         this.selectedPieceId = match.parentId;
         this.previewOptions.html = undefined;
         var fileExtension = getFileExtension(match.filePath);
-        if (fileExtension == "json") {
+        if (match.category == assetCategories.DATAFILE) {
           this.openFilePathInSpreadSheet(match.filePath);
         } else if (match.category == assetCategories.STYLESHEET) {
           this.cmOptions.mode = "css";
+          this.openFilePathInEditor(match.filePath);
+        } else if (match.category == assetCategories.JSON) {
+          this.cmOptions.mode = "javascript";
+          this.openFilePathInEditor(match.filePath);
+        } else if (match.category == assetCategories.TEXT) {
+          this.cmOptions.mode = undefined;
           this.openFilePathInEditor(match.filePath);
         } else if (match.category == assetCategories.IMAGE) {
           this.selectedLocalFile =
@@ -877,8 +904,10 @@ export default {
               this.selectedDirectoryListItem.filePath
             );
         } else if (
-          (fileExtension == "html") || (match.category == assetCategories.BOX))
-         {
+          fileExtension == "html" ||
+          match.category == assetCategories.BOX
+        ) {
+          this.previewOptions.exportName = match.fileName.split(".").shift();
           if (match.category == assetCategories.TEMPLATE) {
             //console.log("openFilePathInEditor", match.filePath);
             this.cmOptions.mode = "htmlmixed";
@@ -904,7 +933,7 @@ export default {
             this.previewOptions.head = extractedTemplate.head;
             this.previewOptions.box = undefined;
           } else if (match.category == assetCategories.BOX) {
-            this.cmOptions.mode = "htmlmixed";
+            this.cmOptions.mode = { name: "javascript", json: true };
             this.openFilePathInEditor(match.filePath);
 
             //get template and read it

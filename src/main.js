@@ -16,9 +16,9 @@ Vue.use(BootstrapVue)
 
 
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faCode, faChevronDown, faChevronRight, faDatabase, faHashtag, faDiceFive, faFile, faImage } from '@fortawesome/free-solid-svg-icons'
+import { faCode, faChevronDown, faChevronRight, faDatabase, faHashtag, faDiceFive, faFile, faImage, faCube, faFileCode, faFileAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-library.add([faCode, faChevronDown, faChevronRight, faDatabase, faHashtag, faDiceFive, faFile, faImage])
+library.add([faCode, faChevronDown, faChevronRight, faDatabase, faHashtag, faDiceFive, faFile, faImage, faCube, faFileCode, faFileAlt])
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 

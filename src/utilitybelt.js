@@ -44,24 +44,28 @@ export function buildWebPage(css, scripts, body) {
     DATAFILE: "datafile",
     IMAGE:"image",
     OTHER: "other",
+    JSON: "json",
     BOX:"box",
+    TEXT:"text",
   };
   
 
   export const assetCategoryExtensions = {
     DIRECTORY: "",
     TEMPLATE: ["html"],
-    STYLESHEET: ["css"],
-    DATAFILE: ["json"],
+    STYLESHEET: ["css","scss"],
+    DATAFILE: ["dkod"],
     IMAGE: ["jpg","jpeg","png","svg"],
+    JSON: ["json", "dko", "js"],
     BOX: ["dkob"],
+    TEXT:["txt"],
   };
 
   export const assetFilenames = {
     DIRECTORY: "",
     TEMPLATE: "template.html",
     STYLESHEET: "stylesheet.css",
-    DATAFILE: "datafile.json",
+    DATAFILE: "datafile.dkod",
   };
 
   export function getAssetCategory(fileName) {
@@ -100,6 +104,14 @@ export function buildWebPage(css, scripts, body) {
       assetCategoryExtensions.IMAGE.includes(getFileExtension(fileName))
     ) {
       return assetCategories.IMAGE;
+    }else if (
+      assetCategoryExtensions.JSON.includes(getFileExtension(fileName))
+    ) {
+      return assetCategories.JSON;
+    }else if (
+      assetCategoryExtensions.TEXT.includes(getFileExtension(fileName))
+    ) {
+      return assetCategories.TEXT;
     } else {
       return assetCategories.OTHER;
     }

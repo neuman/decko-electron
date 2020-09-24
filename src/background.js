@@ -28,7 +28,7 @@ function createWindow() {
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      nodeIntegration: true,
       webviewTag: true,
       browserviewTag: true,
       enableRemoteModule: true,
@@ -220,7 +220,15 @@ app.on('ready', async () => {
             { role: 'delete' },
             { type: 'separator' },
             { role: 'selectAll' }
-          ])
+          ]),
+        {
+          label: 'Format Document',
+          id: 'format_document',
+          accelerator: 'CmdOrCtrl+Shift+I',
+          click: function () {
+            win.webContents.send('formatOpenFile', '');
+          }
+        }
       ]
     },
     // { role: 'viewMenu' }
@@ -381,6 +389,7 @@ ipcMain.on('project-file-opened', (event, arg) => {
 })
 
 function generateServer(arg) {
+  arg.jqueryUrl = './node_modules/jquery/dist/jquery.min.js'.split('/').join(path.sep)
   port += 1;
   server = http.createServer((request, response) => {
     if (request.method == 'POST') {
@@ -406,30 +415,33 @@ function generateServer(arg) {
       if (request.url == "/") {
         console.log('got "/" building web page..');
         var jsFiles = [
-          loadFile(getPublicPath(path.join('iframe_assets', 'jquery.js'))),
+          //loadFile(getPublicPath(path.join('iframe_assets', 'jquery.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'html2canvas.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'canvas2image.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'three.min.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'orbit.js'))),
         ];
-        jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js',))));
+        
         //var extracted = extractBlocks(arg.html, ["head"]);
         var html = "";
-        if(arg.box == undefined){
+        if (arg.box == undefined) {
           jsFiles.push("var arg = " + JSON.stringify(arg));
-        html = buildWebPage(
-          [],
-          jsFiles,
-          arg.head,
-          arg.body);
-        }else{
+          jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js',))));
+          html = buildWebPage(
+            [],
+            jsFiles,
+            arg.head,
+            arg.body);
+        } else {
           jsFiles.push("var arg = " + JSON.stringify(arg));
+          jsFiles.push(loadFile(getPublicPath(path.join('iframe_assets', 'export.js',))));
           html = buildWebPage(
             [loadFile(getPublicPath(path.join('iframe_assets', 'styles.css')))],
             jsFiles,
             "",
-            "<canvas id='threeCanvas' class='exportable' style=' width: 100%; height: 100%;'></canvas>");
+            "<canvas id='threeCanvas' class='exportable' style=' width: 100%; height: 100%;'></canvas><button class='export_ignore' onclick='export_all()'>Export</button>");
         }
+        
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html');
         response.end(html);

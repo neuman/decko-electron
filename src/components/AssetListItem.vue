@@ -65,7 +65,13 @@ export default {
         icString = "database";
       } else if (this.category == assetCategories.IMAGE) {
         icString = "image";
-      } else {
+      } else if (this.category == assetCategories.BOX) {
+        icString = "cube";
+      } else if (this.category == assetCategories.JSON) {
+        icString = "file-code";
+      } else if (this.category == assetCategories.TEXT) {
+        icString = "file-alt";
+      }else {
         icString = "file";
       }
       return icString;
@@ -82,6 +88,8 @@ export default {
         icColor = "lightgreen";
       } else if (this.category == assetCategories.IMAGE) {
         icColor = "teal";
+      } else if (this.category == assetCategories.BOX) {
+        icColor = "goldenrod";
       } else {
         icColor = "#fff";
       }

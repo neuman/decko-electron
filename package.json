@@ -2,10 +2,11 @@
   "name": "decko-electron",
   "version": "0.1.0",
   "private": true,
-  "author":{ "name" : "Barney Rubble"
-    , "email" : "b@rubble.com"
-    , "url" : "http://barnyrubble.tumblr.com/"
-    },
+  "author": {
+    "name": "Barney Rubble",
+    "email": "b@rubble.com",
+    "url": "http://barnyrubble.tumblr.com/"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -24,6 +25,7 @@
     "@popperjs/core": "^2.4.4",
     "bootstrap": "^4.5.2",
     "bootstrap-vue": "^2.16.0",
+    "codemirror-formatting": "^1.0.0",
     "core-js": "^3.6.5",
     "create-html-element": "^3.0.0",
     "electron-context-menu": "^2.3.0",

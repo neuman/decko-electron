@@ -1,5 +1,6 @@
 
-var $ = require("jquery");
+var $ = jQuery = require(arg.jqueryUrl);
+
 
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
@@ -43,13 +44,14 @@ magnetize = function () {
 
 export_all = function () {
   //$('body').prep
-  var elements = $('body').children();
+  var elements = $('body').children().not('.export_ignore');
   var index = 0;
 
   var doNext = null;
   doNext = function () {
     var element = elements.eq(index);
-    console.log('exporting element', element);
+    index++;
+    console.log('exporting element', arg.exportName, index, element);
     $(element).addClass('scale-up');
     // do work 
     window.scrollTo(0, 0);
@@ -60,10 +62,10 @@ export_all = function () {
       }).then(function (canvas) {
         document.body.appendChild(canvas);
         var dataURL = canvas.toDataURL();
-        index++;
+
         $.ajax({
           type: "POST",
-          url: "/" + $(element).attr("card-type") + "-" + index,
+          url: "/" + arg.exportName + "-" + index,
           data: {
             imgBase64: dataURL
           }
@@ -73,6 +75,11 @@ export_all = function () {
           // - please modify the callback in javascript. All you
           // need is to return the url to the file, you just saved 
           // and than put the image in your browser.
+
+          //timer again
+          if (index < elements.length) {
+            doNext();
+          }
         });
 
 
@@ -80,9 +87,9 @@ export_all = function () {
         $(element).removeClass('scale-up');
       });
     //timer again
-    if (index < elements.length - 1) {
+    /*if (index < elements.length - 1) {
       setTimeout(doNext, 100);
-    }
+    }*/
   }
   doNext();
 }
@@ -143,20 +150,19 @@ render_box = function () {
     materials[4].needsUpdate = true;
     materials[5].map.rotation = THREE.MathUtils.degToRad(90);
     materials[5].needsUpdate = true;
-    var boxFrontHeight;
-    var boxFrontWidth;
-    if (frontTexture.image.width < frontTexture.image.height) {
-      boxFrontWidth = 1;
-      boxFrontHeight = frontTexture.image.width / frontTexture.image.height;
+    var boxHeight;
+    var boxWidth;
+    var boxDepth;
+    if (frontTexture.image.width > frontTexture.image.height) {
+      boxWidth = 1;
+      boxHeight = frontTexture.image.height / frontTexture.image.width;
     } else {
-      boxFrontWidth = frontTexture.image.height / frontTexture.image.width;
-      boxFrontHeight = 1;
+      boxHeight = 1;
+      boxWidth = frontTexture.image.wid / frontTexture.image.width;
     }
+    boxDepth = topTexture.image.height / topTexture.image.width;
 
-    const boxWidth = frontTexture.image.width;
-    const boxHeight = frontTexture.image.height;
-    const boxDepth = 1;
-    const geometry = new THREE.BoxBufferGeometry(boxFrontWidth, boxFrontHeight, boxDepth);
+    const geometry = new THREE.BoxBufferGeometry(boxDepth, boxHeight, boxWidth);
 
     const cube = new THREE.Mesh(geometry, faceMaterial);
     scene.add(cube);
@@ -196,6 +202,7 @@ render_box = function () {
 
 $(document).ready(function () {
   console.log('arg', arg);
+  //for templates
   if (arg.body != undefined) {
 
     if (arg.doMagnetize) {
@@ -220,7 +227,7 @@ $(document).ready(function () {
         var dataURL = renderer.domElement.toDataURL();
         $.ajax({
           type: "POST",
-          url: "/" + "box_cover",
+          url: "/" + arg.exportName + "-" + 1,
           data: {
             imgBase64: dataURL
           }
@@ -231,14 +238,14 @@ $(document).ready(function () {
           // need is to return the url to the file, you just saved 
           // and than put the image in your browser.
         });
-      }, 100);
+      }, 1000);
 
 
     }
 
   }
 
-
+/*
   const { ipcRenderer } = require('electron')
   ipcRenderer.on('pinga', () => {
     ipcRenderer.sendToHost('ponga')
@@ -254,6 +261,7 @@ $(document).ready(function () {
     },
     false
   );
+  */
 
 
 });
