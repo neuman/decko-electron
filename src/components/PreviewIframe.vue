@@ -1,5 +1,5 @@
 <template>
-  <webview v-bind:src="url" ref="iframeContent" nodeintegration></webview>
+  <webview v-bind:src="url" ref="iframeContent"></webview>
 </template>
 <script>
 const { ipcRenderer } = require("electron");

@@ -1,5 +1,5 @@
 
-var $ = jQuery = require(arg.jqueryUrl);
+/*var $ = jQuery = require(arg.jqueryUrl);
 
 
 const { remote, webFrame } = require("electron");
@@ -28,6 +28,7 @@ window.addEventListener(
   },
   false
 );
+*/
 
 magnetize = function () {
   $('*').toggleClass('no_corners');

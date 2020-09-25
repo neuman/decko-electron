@@ -135,7 +135,7 @@ import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/mode/javascript/javascript.js";
-import "codemirror-formatting"
+import "codemirror-formatting";
 import "codemirror/addon/edit/matchtags.js";
 import "codemirror/addon/search/searchcursor.js";
 import "codemirror/addon/search/search.js";
@@ -390,11 +390,14 @@ export default {
         this.previewOptions
       );
     },
-    formatOpenFile(){
-if (this.$refs.editor != undefined) {
-  console.log(this.$refs.editor);
-  this.$refs.editor.codemirror.autoFormatRange(this.$refs.editor.codemirror.getCursor(true), this.$refs.editor.codemirror.getCursor(false));
-}
+    formatOpenFile() {
+      if (this.$refs.editor != undefined) {
+        console.log(this.$refs.editor);
+        this.$refs.editor.codemirror.autoFormatRange(
+          this.$refs.editor.codemirror.getCursor(true),
+          this.$refs.editor.codemirror.getCursor(false)
+        );
+      }
     },
     newProjectDialog() {
       dialog
@@ -443,7 +446,7 @@ if (this.$refs.editor != undefined) {
           element.sep = path.sep;
         });
       }
-
+this.openProjectDirectory(path.dirname(filePath));
       var watcher = chokidar.watch(path.dirname(filePath), {
         ignored: /^\./,
         persistent: true,
@@ -453,7 +456,8 @@ if (this.$refs.editor != undefined) {
 
       watcher
         .on("add", function (pathIn) {
-          //console.log("File", pathIn, "has been added");
+          console.log("File", pathIn, "has been added");
+          tempThis.addAssetFromFilePath(pathIn, tempThis);
         })
         .on("change", function (pathIn) {
           console.log("File", pathIn, "has been changed");
@@ -484,7 +488,7 @@ if (this.$refs.editor != undefined) {
           console.error("Error happened", error);
         });
 
-      this.openProjectDirectory(path.dirname(filePath));
+      
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
@@ -493,12 +497,15 @@ if (this.$refs.editor != undefined) {
       var rootAsset = this.addAsset(
         undefined,
         assetCategories.DIRECTORY,
-        directoryPath,
+        "/",
         assetFilenames.DIRECTORY,
         path.basename(this.rootDirectoryPath),
         0
       );
-      this.openDirectory(directoryPath, rootAsset);
+      //this.openDirectory(directoryPath, rootAsset);
+    },
+    getRootDirectoryRelativePath(filePath) {
+      return filePath.replace(this.rootDirectoryPath, "");
     },
     openDirectory(directoryPath, parentAsset) {
       fs.readdir(directoryPath, (err, files) => {
@@ -536,7 +543,7 @@ if (this.$refs.editor != undefined) {
               newPiece = this.addAsset(
                 parentAsset,
                 getAssetCategory(file),
-                directoryPath.replace(this.rootDirectoryPath, ""),
+                this.getRootDirectoryRelativePath(directoryPath),
                 file,
                 file,
                 assetDepth
@@ -544,7 +551,32 @@ if (this.$refs.editor != undefined) {
             }
           });
         }
-      });
+      });//s
+    },
+    addAssetFromFilePath(filePath, tempThis) {
+      
+      if(tempThis == undefined){
+        tempThis = this;
+      }
+      //find parent directory asset
+      var directoryPath = path.dirname(this.getRootDirectoryRelativePath(filePath));
+      console.log('this.Assets[0]', this.Assets[0]);
+      console.log("filePath:", filePath, "directoryPath:", directoryPath)
+      var parent = tempThis.getAssetById(directoryPath);
+      if (parent == undefined) {
+        //otherwise create it
+        parent = tempThis.addAssetFromFilePath(directoryPath)
+      }
+      //add the new asset as it's child
+      var newPiece = this.addAsset(
+        parent,
+        getAssetCategory(filePath),
+        directoryPath,
+        path.basename(filePath),
+        path.basename(filePath),
+        parent.depth +1
+      );
+      return newPiece;
     },
     addAsset(parent, category, directoryPath, fileName, label, depth) {
       var parentId = undefined;
@@ -566,16 +598,22 @@ if (this.$refs.editor != undefined) {
         expanded: true,
         visible: true,
       };
-      var testMatch = this.getAssetById(output.id);
+      return this.pushAssetIfNew(output);
+    },
+    pushAssetIfNew(asset){
+      var testMatch = this.getAssetById(asset.id);
       if (testMatch == undefined) {
-        if (parent != undefined) {
-          this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, output);
+        if (asset.parent != undefined) {
+          console.log('******************************************this.Assets.indexOf(parent)', this.Assets.indexOf(asset.parent));
+          this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, asset.asset);
         } else {
-          this.Assets.push(output);
+          console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!parent == undefined')
+          this.Assets.push(asset);
         }
-        return output;
+        return asset;
       } else {
-        return undefined;
+        console.log('asset already exists',asset )
+        return testMatch;
       }
     },
     addDataSheet(label) {
