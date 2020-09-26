@@ -13,6 +13,7 @@
     <div v-for="item in children" :key="item.label">
       <nested-asset-list-item
         :label="item.label"
+        :relativeFilePath="item.relativeFilePath"
         :depth="getChildDepth"
         :isDirectory="item.isDirectory"
         :children="item.children"
@@ -33,6 +34,7 @@ import NestedAssetListItem from "./NestedAssetListItem.vue";
 export default {
   props: {
     label: { required: true, type: String },
+    relativeFilePath: { required: true, type: String },
     depth: { required: true, type: Number },
     isDirectory: { required: true, type: Boolean },
     children: { required: true, type: Object },
@@ -106,10 +108,10 @@ export default {
   },
   methods: {
     isClicked() {
-      this.$emit("asset-selected", this.label);
+      this.$emit("asset-selected", this.relativeFilePath);
     },
-    childClicked(label) {
-      this.$emit("asset-selected", label);
+    childClicked(relativeFilePath) {
+      this.$emit("asset-selected", relativeFilePath);
     },
   },
 };

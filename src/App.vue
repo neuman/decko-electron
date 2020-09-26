@@ -20,20 +20,6 @@
           :isDirectory="Files.isDirectory"
           @asset-selected="assetSelected"
         ></nested-asset-list-item>
-        <div v-for="item in Assets" :key="item.id">
-          <asset-list-item
-            :label="item.label"
-            :category="item.category"
-            :volatile="item.volatile"
-            :id="item.id"
-            :filePath="item.filePath"
-            :depth="item.depth"
-            :active="item.active"
-            :expanded="item.expanded"
-            :visible="item.visible"
-            @asset-selected="assetSelected"
-          ></asset-list-item>
-        </div>
       </pane>
       <pane class="bg-dark">
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
@@ -172,7 +158,6 @@ Handlebars.registerHelper("if_lte", function (a, b, opts) {
 });
 import Vue from "vue";
 import uniqueId from "lodash.uniqueid";
-import AssetListItem from "./components/AssetListItem";
 import NestedAssetListItem from "./components/NestedAssetListItem";
 import DataSheetTab from "./components/DataSheetTab";
 import PreviewIframe from "./components/PreviewIframe";
@@ -242,7 +227,6 @@ export default {
   name: "App",
   components: {
     PreviewIframe,
-    AssetListItem,
     NestedAssetListItem,
     DataSheetTab,
     codemirror,
@@ -252,7 +236,7 @@ export default {
   },
   created: function () {
     if (process.env.NODE_ENV == "development") {
-      this.openProjectFile("/home/neuman/TEST/project.dko");
+      this.openProjectFile("/home/neuman/Documents/work/captainly/project.dko");
     }
     /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
@@ -653,7 +637,7 @@ export default {
     createFileObject(label, relativeFilePath, isDirectory) {
       return {
         label: label,
-        relativeFilePath: relativeFilePath,
+        relativeFilePath: path.join(path.sep, relativeFilePath),
         fileName: path.basename(relativeFilePath),
         category: getAssetCategory(relativeFilePath),
         isDirectory:isDirectory,
@@ -942,11 +926,7 @@ export default {
     },
     assetSelected(id) {
       console.log("assetSelected", id);
-      if (this.selectedDirectoryListItem != undefined) {
-        //this.selectedDirectoryListItem.active = false;
-      }
-      this.selectedDirectoryListItem = this.getOrCreateFileByPath(id);
-      //this.$set(this.selectedDirectoryListItem, "active", true);
+      this.selectedDirectoryListItem = this.Files.index[id];
       console.log(
         "this.selectedDirectoryListItem",
         this.selectedDirectoryListItem
@@ -1008,29 +988,29 @@ export default {
       });
     },
     assetRender(id, arg) {
-      var match = this.getAssetById(id);
+      var match = this.Files.index[id];
 
       //if it's a dir, expand it
       //if it's a file, open it in editor
         this.previewOptions.html = undefined;
-        var fileExtension = getFileExtension(match.filePath);
+        var fileExtension = getFileExtension(match.fileName);
         if (match.category == assetCategories.DATAFILE) {
-          this.openFilePathInSpreadSheet(match.filePath);
+          this.openFilePathInSpreadSheet(match.relativeFilePath);
         } else if (match.category == assetCategories.STYLESHEET) {
           this.cmOptions.mode = "css";
-          this.openFilePathInEditor(match.filePath);
+          this.openFilePathInEditor(match.relativeFilePath);
         } else if (match.category == assetCategories.JSON) {
           this.cmOptions.mode = "javascript";
-          this.openFilePathInEditor(match.filePath);
+          this.openFilePathInEditor(match.relativeFilePath);
         } else if (match.category == assetCategories.TEXT) {
           this.cmOptions.mode = undefined;
-          this.openFilePathInEditor(match.filePath);
+          this.openFilePathInEditor(match.relativeFilePath);
         } else if (match.category == assetCategories.IMAGE) {
           this.selectedLocalFile =
             "safe-file-protocol://" +
             path.join(
               this.rootDirectoryPath,
-              this.selectedDirectoryListItem.filePath
+              this.selectedDirectoryListItem.relativeFilePath
             );
         } else if (
           fileExtension == "html" ||
@@ -1040,12 +1020,11 @@ export default {
           if (match.category == assetCategories.TEMPLATE) {
             //console.log("openFilePathInEditor", match.filePath);
             this.cmOptions.mode = "htmlmixed";
-            this.openFilePathInEditor(match.filePath);
+            this.openFilePathInEditor(match.relativeFilePath);
 
             //get template and read it
-            this.selectedPieceId = match.id;
             //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-            var templateFilePath = match.filePath;
+            var templateFilePath = match.relativeFilePath;
             var templateContent = this.loadFile(templateFilePath);
 
             //read datafile
@@ -1063,12 +1042,11 @@ export default {
             this.previewOptions.box = undefined;
           } else if (match.category == assetCategories.BOX) {
             this.cmOptions.mode = { name: "javascript", json: true };
-            this.openFilePathInEditor(match.filePath);
+            this.openFilePathInEditor(match.relativeFilePath);
 
             //get template and read it
-            this.selectedPieceId = match.id;
             this.previewOptions.body = undefined;
-            this.previewOptions.box = JSON.parse(this.loadFile(match.filePath));
+            this.previewOptions.box = JSON.parse(this.loadFile(match.relativeFilePath));
           }
 
           electron.ipcRenderer.send(
