@@ -2,13 +2,22 @@
   <div id="app" class="h-100">
     <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
       <div class="d-block text-center">
-        <p
-          class="my-4"
-        >Importing will wipe out all old data and replace it with the incoming data file contents.</p>
+        <p class="my-4">
+          Importing will wipe out all old data and replace it with the incoming
+          data file contents.
+        </p>
       </div>
     </b-modal>
     <splitpanes class="default-theme">
       <pane size="30" class="bg-light overflow-y-handled">
+        <nested-asset-list-item
+          :label="Files.label"
+          :relativeFilePath="Files.relativeFilePath"
+          :fileName="Files.fileName"
+          :depth="Files.depth"
+          :children="Files.children"
+          @asset-selected="assetSelected"
+        ></nested-asset-list-item>
         <div v-for="item in Assets" :key="item.id">
           <asset-list-item
             :label="item.label"
@@ -28,7 +37,11 @@
         <div class="h-100" v-if="this.selectedDirectoryListItem != undefined">
           <div
             class="h-100"
-            v-if="['box','template'].includes(this.selectedDirectoryListItem.category)"
+            v-if="
+              ['box', 'template'].includes(
+                this.selectedDirectoryListItem.category
+              )
+            "
           >
             <splitpanes
               class="default-theme"
@@ -36,18 +49,34 @@
               @resized="handlePaneEvent('resized', $event)"
             >
               <pane>
-                <codemirror ref="editor" class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+                <codemirror
+                  ref="editor"
+                  class="h-100"
+                  v-model="msg"
+                  :options="cmOptions"
+                ></codemirror>
               </pane>
               <pane>
                 <div
                   v-if="paneDragging"
-                  style="position:fixed; width:100%; height:100%; z-index:100;"
+                  style="
+                    position: fixed;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 100;
+                  "
                 ></div>
-                <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
+                <preview-iframe
+                  ref="iframeContent"
+                  style="height: 100%; width: 100%; border: none"
+                ></preview-iframe>
               </pane>
             </splitpanes>
           </div>
-          <div class="h-100" v-else-if="this.selectedDirectoryListItem.category == 'datafile'">
+          <div
+            class="h-100"
+            v-else-if="this.selectedDirectoryListItem.category == 'datafile'"
+          >
             <div>
               <b-navbar toggleable="lg" type="dark" sticky="true">
                 <b-tabs content-class="mt-3">
@@ -62,35 +91,51 @@
                 </b-tabs>
               </b-navbar>
             </div>
-            <hot-table :settings="hotSettings" :data="spreadsheet" ref="deckoTable"></hot-table>
+            <hot-table
+              :settings="hotSettings"
+              :data="spreadsheet"
+              ref="deckoTable"
+            ></hot-table>
           </div>
           <div
             class="h-100"
-            v-if="['stylesheet','json','text'].includes(this.selectedDirectoryListItem.category)"
+            v-if="
+              ['stylesheet', 'json', 'text'].includes(
+                this.selectedDirectoryListItem.category
+              )
+            "
           >
-            <codemirror ref="editor" class="h-100" v-model="msg" :options="cmOptions"></codemirror>
+            <codemirror
+              ref="editor"
+              class="h-100"
+              v-model="msg"
+              :options="cmOptions"
+            ></codemirror>
           </div>
           <div
             class="h-100 checkered"
             v-else-if="this.selectedDirectoryListItem.category == 'image'"
           >
-            <v-zoomer style="width: 100%; height: 100%;">
+            <v-zoomer style="width: 100%; height: 100%">
               <img
                 v-bind:src="this.selectedLocalFile"
-                style="object-fit: contain; width: 100%; height: 100%;"
+                style="object-fit: contain; width: 100%; height: 100%"
               />
             </v-zoomer>
           </div>
           <div
-            style="height:100%; width:100%;"
+            style="height: 100%; width: 100%"
             v-else-if="this.selectedDirectoryListItem.category == 'directory'"
           >
-            <preview-iframe ref="iframeContent" style="height:100%; width:100%; border:none;"></preview-iframe>
+            <preview-iframe
+              ref="iframeContent"
+              style="height: 100%; width: 100%; border: none"
+            ></preview-iframe>
           </div>
-          <div
-            style="height:100%; width:100%;"
-            v-else
-          >Decko Can't Open This File. Please navigate to it in your file explorer to view or modify.</div>
+          <div style="height: 100%; width: 100%" v-else>
+            Decko Can't Open This File. Please navigate to it in your file
+            explorer to view or modify.
+          </div>
         </div>
       </pane>
     </splitpanes>
@@ -126,6 +171,7 @@ Handlebars.registerHelper("if_lte", function (a, b, opts) {
 import Vue from "vue";
 import uniqueId from "lodash.uniqueid";
 import AssetListItem from "./components/AssetListItem";
+import NestedAssetListItem from "./components/NestedAssetListItem";
 import DataSheetTab from "./components/DataSheetTab";
 import PreviewIframe from "./components/PreviewIframe";
 import fs from "fs";
@@ -195,6 +241,7 @@ export default {
   components: {
     PreviewIframe,
     AssetListItem,
+    NestedAssetListItem,
     DataSheetTab,
     codemirror,
     HotTable,
@@ -281,6 +328,42 @@ export default {
       selectedDirectoryListItem: undefined,
       openFile: undefined,
       Assets: [],
+      Files: {
+        FilesList: [],
+        label: "root",
+        relativeFilePath: "",
+        fileName: "",
+        depth: 0,
+        children: {},
+        index: {},
+      },
+      rootFake: {
+        label: "root",
+        depth: 0,
+        children: {
+          b3: {
+            label: "b3",
+            depth: 1,
+            children: {
+              a3: {
+                label: "a3",
+                depth: 2,
+                children: [],
+              },
+              b3: {
+                label: "b3",
+                depth: 2,
+                children: [],
+              },
+              c3: {
+                label: "c3",
+                depth: 2,
+                children: [],
+              },
+            },
+          },
+        },
+      },
       DataSheets: [],
       msg: undefined,
       spreadsheet: undefined,
@@ -308,7 +391,8 @@ export default {
   },
   methods: {
     debugAction() {
-      console.log(this.Assets);
+      //console.log(this.Assets);
+      console.log("Files", this.Files);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
       /*
@@ -446,7 +530,7 @@ export default {
           element.sep = path.sep;
         });
       }
-this.openProjectDirectory(path.dirname(filePath));
+      this.openProjectDirectory(path.dirname(filePath));
       var watcher = chokidar.watch(path.dirname(filePath), {
         ignored: /^\./,
         persistent: true,
@@ -457,27 +541,41 @@ this.openProjectDirectory(path.dirname(filePath));
       watcher
         .on("add", function (pathIn) {
           console.log("File", pathIn, "has been added");
-          tempThis.addAssetFromFilePath(pathIn, tempThis);
+          //tempThis.addAssetFromFilePath(pathIn, tempThis);
+          tempThis.getOrCreateFileByPath(
+            tempThis.getRootDirectoryRelativePath(pathIn),
+            tempThis
+          );
+        })
+        .on("unlink", function (pathIn) {
+          console.log("File", pathIn, "has been removed");
+          //tempThis.addAssetFromFilePath(pathIn, tempThis);
+          tempThis.removeFileByPath(
+            tempThis.getRootDirectoryRelativePath(pathIn),
+            tempThis
+          );
+          //tempThis.removeFileByPath(tempThis.getRootDirectoryRelativePath(pathIn), tempThis);
         })
         .on("change", function (pathIn) {
           console.log("File", pathIn, "has been changed");
-          console.log("tempThis", tempThis);
           tempThis.handleFileChange(pathIn);
-          if (
-            [assetCategories.TEMPLATE, assetCategories.BOX].includes(
-              tempThis.selectedDirectoryListItem.category
-            )
-          ) {
-            console.log(pathIn, "has been changed");
-            console.log(
-              "path.dirname(pathIn)",
-              path.basename(path.dirname(pathIn))
-            );
-            if (path.basename(path.dirname(pathIn)) != "output") {
-              tempThis.assetRender(
-                tempThis.selectedDirectoryListItem.id,
-                false
+          if (tempThis.selectedDirectoryListItem != undefined) {
+            if (
+              [assetCategories.TEMPLATE, assetCategories.BOX].includes(
+                tempThis.selectedDirectoryListItem.category
+              )
+            ) {
+              console.log(pathIn, "has been changed");
+              console.log(
+                "path.dirname(pathIn)",
+                path.basename(path.dirname(pathIn))
               );
+              if (path.basename(path.dirname(pathIn)) != "output") {
+                tempThis.assetRender(
+                  tempThis.selectedDirectoryListItem.id,
+                  false
+                );
+              }
             }
           }
         })
@@ -487,8 +585,6 @@ this.openProjectDirectory(path.dirname(filePath));
         .on("error", function (error) {
           console.error("Error happened", error);
         });
-
-      
 
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
@@ -551,21 +647,22 @@ this.openProjectDirectory(path.dirname(filePath));
             }
           });
         }
-      });//s
+      }); //s
     },
     addAssetFromFilePath(filePath, tempThis) {
-      
-      if(tempThis == undefined){
+      if (tempThis == undefined) {
         tempThis = this;
       }
       //find parent directory asset
-      var directoryPath = path.dirname(this.getRootDirectoryRelativePath(filePath));
-      console.log('this.Assets[0]', this.Assets[0]);
-      console.log("filePath:", filePath, "directoryPath:", directoryPath)
+      var directoryPath = path.dirname(
+        this.getRootDirectoryRelativePath(filePath)
+      );
+      console.log("this.Assets[0]", this.Assets[0]);
+      console.log("filePath:", filePath, "directoryPath:", directoryPath);
       var parent = tempThis.getAssetById(directoryPath);
       if (parent == undefined) {
         //otherwise create it
-        parent = tempThis.addAssetFromFilePath(directoryPath)
+        parent = tempThis.addAssetFromFilePath(directoryPath);
       }
       //add the new asset as it's child
       var newPiece = this.addAsset(
@@ -574,9 +671,62 @@ this.openProjectDirectory(path.dirname(filePath));
         directoryPath,
         path.basename(filePath),
         path.basename(filePath),
-        parent.depth +1
+        parent.depth + 1
       );
       return newPiece;
+    },
+    createFileObject(label, relativeFilePath, parent) {
+      return {
+        label: label,
+        relativeFilePath: relativeFilePath,
+        fileName: path.basename(relativeFilePath),
+        parent: parent,
+        depth: parent.depth + 1,
+        category: getAssetCategory(relativeFilePath),
+        children: {},
+      };
+    },
+    getOrCreateFileByPath(relativeFilePath, tempThis) {
+      console.log("getOrCreateFileByPath", relativeFilePath);
+      if (tempThis == undefined) {
+        tempThis = this;
+      }
+      //split the path into an array of tokens
+      var fileTokens = relativeFilePath.split(path.sep);
+      //remove root node
+      fileTokens.shift();
+      console.log("fileTokens", fileTokens);
+      //create target from root
+      var target = tempThis.Files;
+      var targetPath = target.relativeFilePath;
+      //for every token starting at first
+      fileTokens.forEach((fileToken) => {
+        targetPath = path.join(targetPath, fileToken);
+        if (target.children[fileToken] != undefined) {
+          console.log("already exists", fileToken);
+          target = target.children[fileToken];
+        } else {
+          console.log("creating", fileToken);
+          this.$set(
+            target.children,
+            fileToken,
+            tempThis.createFileObject(fileToken, targetPath, target)
+          );
+          target = target.children[fileToken];
+          tempThis.$set(tempThis.Files.index, relativeFilePath, target);
+        }
+      });
+      return target;
+    },
+    removeFileByPath(relativeFilePath, tempThis) {
+      console.log("removing", relativeFilePath);
+      var target = tempThis.Files.index[tempThis.relativeFilePath];
+      if (target != undefined) {
+        console.log("found", relativeFilePath);
+        tempThis.$delete(target.parent.children, relativeFilePath);
+      } else {
+        console.log("did not find", relativeFilePath);
+      }
     },
     addAsset(parent, category, directoryPath, fileName, label, depth) {
       var parentId = undefined;
@@ -600,19 +750,24 @@ this.openProjectDirectory(path.dirname(filePath));
       };
       return this.pushAssetIfNew(output);
     },
-    pushAssetIfNew(asset){
+    pushAssetIfNew(asset) {
       var testMatch = this.getAssetById(asset.id);
       if (testMatch == undefined) {
         if (asset.parent != undefined) {
-          console.log('******************************************this.Assets.indexOf(parent)', this.Assets.indexOf(asset.parent));
+          console.log(
+            "******************************************this.Assets.indexOf(parent)",
+            this.Assets.indexOf(asset.parent)
+          );
           this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, asset.asset);
         } else {
-          console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!parent == undefined')
+          console.log(
+            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!parent == undefined"
+          );
           this.Assets.push(asset);
         }
         return asset;
       } else {
-        console.log('asset already exists',asset )
+        console.log("asset already exists", asset);
         return testMatch;
       }
     },
