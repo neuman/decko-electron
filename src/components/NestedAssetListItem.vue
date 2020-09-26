@@ -2,7 +2,7 @@
   <div>
     <div v-on:click="isClicked">
       <div
-        class="text-nowrap assetListItem"
+        class="text-nowrap assetListItem defaultCursor unselectable"
         v-bind:style="{ 'padding-left': myIndentString + 'px' }"
         :for="label"
       >
@@ -10,15 +10,17 @@
         {{ label }}
       </div>
     </div>
-    <div v-for="item in children" :key="item.label">
-      <nested-asset-list-item
-        :label="item.label"
-        :relativeFilePath="item.relativeFilePath"
-        :depth="getChildDepth"
-        :isDirectory="item.isDirectory"
-        :children="item.children"
-        @asset-selected="childClicked"
-      ></nested-asset-list-item>
+    <div v-if="myExpanded == true">
+      <div v-for="item in children" :key="item.label">
+        <nested-asset-list-item
+          :label="item.label"
+          :relativeFilePath="item.relativeFilePath"
+          :depth="getChildDepth"
+          :isDirectory="item.isDirectory"
+          :children="item.children"
+          @asset-selected="childClicked"
+        ></nested-asset-list-item>
+      </div>
     </div>
   </div>
 </template>
@@ -47,7 +49,7 @@ export default {
     return {
       myChildren: this.children,
       myIndentString: this.depth * 20,
-      myExpanded: true,
+      myExpanded: false,
     };
   },
   computed: {
@@ -58,7 +60,7 @@ export default {
       //console.log('getIcon category', this.category);
       var icString = "";
       if (this.isDirectory) {
-        if (this.expanded) {
+        if (this.myExpanded) {
           icString = "chevron-down";
         } else {
           icString = "chevron-right";
@@ -108,7 +110,11 @@ export default {
   },
   methods: {
     isClicked() {
-      this.$emit("asset-selected", this.relativeFilePath);
+      if (this.isDirectory) {
+        this.myExpanded = !this.myExpanded;
+      } else {
+        this.$emit("asset-selected", this.relativeFilePath);
+      }
     },
     childClicked(relativeFilePath) {
       this.$emit("asset-selected", relativeFilePath);
