@@ -14,8 +14,10 @@
           :label="Files.label"
           :relativeFilePath="Files.relativeFilePath"
           :fileName="Files.fileName"
-          :depth="Files.depth"
+          :depth="0"
           :children="Files.children"
+          :category="Files.category"
+          :isDirectory="Files.isDirectory"
           @asset-selected="assetSelected"
         ></nested-asset-list-item>
         <div v-for="item in Assets" :key="item.id">
@@ -328,15 +330,7 @@ export default {
       selectedDirectoryListItem: undefined,
       openFile: undefined,
       Assets: [],
-      Files: {
-        FilesList: [],
-        label: "root",
-        relativeFilePath: "",
-        fileName: "",
-        depth: 0,
-        children: {},
-        index: {},
-      },
+      Files: {},
       rootFake: {
         label: "root",
         depth: 0,
@@ -540,7 +534,7 @@ export default {
 
       watcher
         .on("add", function (pathIn) {
-          console.log("File", pathIn, "has been added");
+          //console.log("File", pathIn, "has been added");
           //tempThis.addAssetFromFilePath(pathIn, tempThis);
           tempThis.getOrCreateFileByPath(
             tempThis.getRootDirectoryRelativePath(pathIn),
@@ -557,7 +551,7 @@ export default {
           //tempThis.removeFileByPath(tempThis.getRootDirectoryRelativePath(pathIn), tempThis);
         })
         .on("change", function (pathIn) {
-          console.log("File", pathIn, "has been changed");
+          //console.log("File", pathIn, "has been changed");
           tempThis.handleFileChange(pathIn);
           if (tempThis.selectedDirectoryListItem != undefined) {
             if (
@@ -590,20 +584,26 @@ export default {
     },
     openProjectDirectory(directoryPath) {
       //create root folder asset
-      var rootAsset = this.addAsset(
-        undefined,
-        assetCategories.DIRECTORY,
-        "/",
-        assetFilenames.DIRECTORY,
-        path.basename(this.rootDirectoryPath),
-        0
-      );
+
+
+      this.Files = {
+        FilesList: [],
+        label: path.basename(this.rootDirectoryPath),
+        relativeFilePath: "",
+        fileName: "",
+        depth: 0,
+        children: {},
+        category:assetCategories.DIRECTORY,
+        isDirectory: true,
+        index: {},
+      }
       //this.openDirectory(directoryPath, rootAsset);
     },
     getRootDirectoryRelativePath(filePath) {
       return filePath.replace(this.rootDirectoryPath, "");
     },
     openDirectory(directoryPath, parentAsset) {
+/*
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
@@ -648,46 +648,20 @@ export default {
           });
         }
       }); //s
+      */
     },
-    addAssetFromFilePath(filePath, tempThis) {
-      if (tempThis == undefined) {
-        tempThis = this;
-      }
-      //find parent directory asset
-      var directoryPath = path.dirname(
-        this.getRootDirectoryRelativePath(filePath)
-      );
-      console.log("this.Assets[0]", this.Assets[0]);
-      console.log("filePath:", filePath, "directoryPath:", directoryPath);
-      var parent = tempThis.getAssetById(directoryPath);
-      if (parent == undefined) {
-        //otherwise create it
-        parent = tempThis.addAssetFromFilePath(directoryPath);
-      }
-      //add the new asset as it's child
-      var newPiece = this.addAsset(
-        parent,
-        getAssetCategory(filePath),
-        directoryPath,
-        path.basename(filePath),
-        path.basename(filePath),
-        parent.depth + 1
-      );
-      return newPiece;
-    },
-    createFileObject(label, relativeFilePath, parent) {
+    createFileObject(label, relativeFilePath, isDirectory) {
       return {
         label: label,
         relativeFilePath: relativeFilePath,
         fileName: path.basename(relativeFilePath),
-        parent: parent,
-        depth: parent.depth + 1,
         category: getAssetCategory(relativeFilePath),
+        isDirectory:isDirectory,
         children: {},
       };
     },
     getOrCreateFileByPath(relativeFilePath, tempThis) {
-      console.log("getOrCreateFileByPath", relativeFilePath);
+      //console.log("getOrCreateFileByPath", relativeFilePath);
       if (tempThis == undefined) {
         tempThis = this;
       }
@@ -695,7 +669,7 @@ export default {
       var fileTokens = relativeFilePath.split(path.sep);
       //remove root node
       fileTokens.shift();
-      console.log("fileTokens", fileTokens);
+      //console.log("fileTokens", fileTokens);
       //create target from root
       var target = tempThis.Files;
       var targetPath = target.relativeFilePath;
@@ -703,14 +677,18 @@ export default {
       fileTokens.forEach((fileToken) => {
         targetPath = path.join(targetPath, fileToken);
         if (target.children[fileToken] != undefined) {
-          console.log("already exists", fileToken);
+          //console.log("already exists", fileToken);
           target = target.children[fileToken];
         } else {
-          console.log("creating", fileToken);
+          //console.log("creating", fileToken);
+          var isDirectory = false;
+            if (fs.lstatSync(path.join(this.rootDirectoryPath, targetPath)).isDirectory()) {
+              isDirectory = true;
+            }
           this.$set(
             target.children,
             fileToken,
-            tempThis.createFileObject(fileToken, targetPath, target)
+            tempThis.createFileObject(fileToken, targetPath, isDirectory)
           );
           target = target.children[fileToken];
           tempThis.$set(tempThis.Files.index, relativeFilePath, target);
@@ -723,52 +701,10 @@ export default {
       var target = tempThis.Files.index[tempThis.relativeFilePath];
       if (target != undefined) {
         console.log("found", relativeFilePath);
-        tempThis.$delete(target.parent.children, relativeFilePath);
+        var parent = tempThis.Files.index[path.dirname(relativeFilePath)];
+        tempThis.$delete(parent.children, relativeFilePath);
       } else {
         console.log("did not find", relativeFilePath);
-      }
-    },
-    addAsset(parent, category, directoryPath, fileName, label, depth) {
-      var parentId = undefined;
-      if (parent != undefined) {
-        parentId = parent.id;
-      }
-      //console.log('adding', path.join(directoryPath, fileName))
-      var output = {
-        id: path.join(directoryPath, fileName),
-        parentId: parentId,
-        category: category,
-        label: label,
-        fileName: fileName,
-        filePath: path.join(directoryPath, fileName),
-        sep: path.sep,
-        active: true,
-        singleton: false,
-        depth: depth,
-        expanded: true,
-        visible: true,
-      };
-      return this.pushAssetIfNew(output);
-    },
-    pushAssetIfNew(asset) {
-      var testMatch = this.getAssetById(asset.id);
-      if (testMatch == undefined) {
-        if (asset.parent != undefined) {
-          console.log(
-            "******************************************this.Assets.indexOf(parent)",
-            this.Assets.indexOf(asset.parent)
-          );
-          this.Assets.splice(this.Assets.indexOf(parent) + 1, 0, asset.asset);
-        } else {
-          console.log(
-            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!parent == undefined"
-          );
-          this.Assets.push(asset);
-        }
-        return asset;
-      } else {
-        console.log("asset already exists", asset);
-        return testMatch;
       }
     },
     addDataSheet(label) {
@@ -877,7 +813,7 @@ export default {
       var block = "";
       var p = pieceData[0];
       for (var key in p) {
-        console.log(key + " -> " + p[key]);
+        //console.log(key + " -> " + p[key]);
         block +=
           "\t<p>\n\t\t<span class='badge badge-primary'>" +
           key +
@@ -892,6 +828,7 @@ export default {
       );
     },
     importAllDataDialog() {
+      /*
       dialog
         .showOpenDialog({
           title: "Select Your .json File.",
@@ -909,6 +846,7 @@ export default {
               attributename
             );
             //create Piece in state
+            
             var newPiece = this.addAsset(
               undefined,
               assetCategories.DIRECTORY,
@@ -990,7 +928,7 @@ export default {
           }
           this.saveProject();
           console.log(this.Assets);
-        });
+        });*/
     },
     search(input) {
       return Object.keys(this).every((key) => input[key] === this[key]);
@@ -1007,7 +945,7 @@ export default {
       if (this.selectedDirectoryListItem != undefined) {
         //this.selectedDirectoryListItem.active = false;
       }
-      this.selectedDirectoryListItem = this.getAssetById(id);
+      this.selectedDirectoryListItem = this.getOrCreateFileByPath(id);
       //this.$set(this.selectedDirectoryListItem, "active", true);
       console.log(
         "this.selectedDirectoryListItem",
@@ -1074,8 +1012,6 @@ export default {
 
       //if it's a dir, expand it
       //if it's a file, open it in editor
-      if (match.parentId != undefined) {
-        this.selectedPieceId = match.parentId;
         this.previewOptions.html = undefined;
         var fileExtension = getFileExtension(match.filePath);
         if (match.category == assetCategories.DATAFILE) {
@@ -1160,7 +1096,6 @@ export default {
           match.expanded = !match.expanded;
           this.toggleDirectoryChildVisibility(match.id, match.expanded);
         }
-      }
     },
   },
 };

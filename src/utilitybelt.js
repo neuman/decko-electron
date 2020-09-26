@@ -51,7 +51,7 @@ export function buildWebPage(css, scripts, body) {
   
 
   export const assetCategoryExtensions = {
-    DIRECTORY: "",
+    DIRECTORY: [""],
     TEMPLATE: ["html"],
     STYLESHEET: ["css","scss"],
     DATAFILE: ["dkod"],
