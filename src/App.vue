@@ -236,7 +236,7 @@ export default {
   },
   created: function () {
     if (process.env.NODE_ENV == "development") {
-      this.openProjectFile("/home/neuman/Documents/work/captainly/project.dko");
+      this.openProjectFile("/home/neuman/TEST/project.dko");
     }
     /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
@@ -534,8 +534,17 @@ export default {
           );
           //tempThis.removeFileByPath(tempThis.getRootDirectoryRelativePath(pathIn), tempThis);
         })
+        .on("unlinkDir", function (pathIn) {
+          console.log("Dir", pathIn, "has been removed");
+          //tempThis.addAssetFromFilePath(pathIn, tempThis);
+          tempThis.removeFileByPath(
+            tempThis.getRootDirectoryRelativePath(pathIn),
+            tempThis
+          );
+          //tempThis.removeFileByPath(tempThis.getRootDirectoryRelativePath(pathIn), tempThis);
+        })
         .on("change", function (pathIn) {
-          //console.log("File", pathIn, "has been changed");
+          console.log("File", pathIn, "has been changed");
           tempThis.handleFileChange(pathIn);
           if (tempThis.selectedDirectoryListItem != undefined) {
             if (
@@ -557,9 +566,6 @@ export default {
             }
           }
         })
-        .on("unlink", function (pathIn) {
-          console.log("File", pathIn, "has been removed");
-        })
         .on("error", function (error) {
           console.error("Error happened", error);
         });
@@ -569,25 +575,25 @@ export default {
     openProjectDirectory(directoryPath) {
       //create root folder asset
 
-
       this.Files = {
         FilesList: [],
         label: path.basename(this.rootDirectoryPath),
-        relativeFilePath: "",
+        relativeFilePath: "/",
         fileName: "",
         depth: 0,
         children: {},
-        category:assetCategories.DIRECTORY,
+        category: assetCategories.DIRECTORY,
         isDirectory: true,
         index: {},
-      }
+      };
+      this.Files.index[this.Files.relativeFilePath] = this.Files;
       //this.openDirectory(directoryPath, rootAsset);
     },
     getRootDirectoryRelativePath(filePath) {
       return filePath.replace(this.rootDirectoryPath, "");
     },
     openDirectory(directoryPath, parentAsset) {
-/*
+      /*
       fs.readdir(directoryPath, (err, files) => {
         if (err) console.log(err);
         else {
@@ -637,10 +643,10 @@ export default {
     createFileObject(label, relativeFilePath, isDirectory) {
       return {
         label: label,
-        relativeFilePath: path.join(path.sep, relativeFilePath),
+        relativeFilePath: path.join(relativeFilePath),
         fileName: path.basename(relativeFilePath),
         category: getAssetCategory(relativeFilePath),
-        isDirectory:isDirectory,
+        isDirectory: isDirectory,
         children: {},
       };
     },
@@ -659,34 +665,83 @@ export default {
       var targetPath = target.relativeFilePath;
       //for every token starting at first
       fileTokens.forEach((fileToken) => {
+        fileToken = path.join(path.sep, fileToken);
         targetPath = path.join(targetPath, fileToken);
         if (target.children[fileToken] != undefined) {
           //console.log("already exists", fileToken);
           target = target.children[fileToken];
         } else {
-          //console.log("creating", fileToken);
+          console.log("creating", fileToken);
           var isDirectory = false;
-            if (fs.lstatSync(path.join(this.rootDirectoryPath, targetPath)).isDirectory()) {
-              isDirectory = true;
-            }
+          if (
+            fs
+              .lstatSync(path.join(this.rootDirectoryPath, targetPath))
+              .isDirectory()
+          ) {
+            isDirectory = true;
+          }
           this.$set(
             target.children,
             fileToken,
             tempThis.createFileObject(fileToken, targetPath, isDirectory)
           );
           target = target.children[fileToken];
-          tempThis.$set(tempThis.Files.index, relativeFilePath, target);
+          tempThis.$set(tempThis.Files.index, targetPath, target);
         }
       });
       return target;
     },
     removeFileByPath(relativeFilePath, tempThis) {
       console.log("removing", relativeFilePath);
-      var target = tempThis.Files.index[tempThis.relativeFilePath];
+      //get target from index
+      var target = tempThis.Files.index[relativeFilePath];
       if (target != undefined) {
         console.log("found", relativeFilePath);
-        var parent = tempThis.Files.index[path.dirname(relativeFilePath)];
-        tempThis.$delete(parent.children, relativeFilePath);
+        //run this function on all children recursively
+        //find the parent
+        var parent =
+          tempThis.Files.index[path.dirname(target.relativeFilePath)];
+        console.log("parent", path.dirname(target.relativeFilePath), parent);
+        //delete this child from parent
+        if (parent != undefined) {
+          var pointer = path.join(path.sep, path.basename(relativeFilePath));
+          console.log("pointer", pointer);
+          console.log("deleting", pointer, "from", parent.relativeFilePath);
+          tempThis.$delete(parent.children, pointer);
+        }
+        tempThis.$delete(tempThis.Files.index, relativeFilePath);
+      } else {
+        console.log("did not find", relativeFilePath);
+      }
+    },
+    removeFileByPathz(relativeFilePath, tempThis) {
+      console.log("removing", relativeFilePath);
+      //get target from index
+      var target = tempThis.Files.index[relativeFilePath];
+      if (target != undefined) {
+        console.log("found", relativeFilePath);
+        //run this function on all children recursively
+        for (const [key, value] of Object.entries(target.children)) {
+          console.log(`${key}: ${value}`);
+          console.log(
+            "recursing on child of",
+            relativeFilePath,
+            value.relativeFilePath
+          );
+          tempThis.removeFileByPath(value.relativeFilePath, tempThis);
+        }
+        //find the parent
+        var parent =
+          tempThis.Files.index[path.dirname(target.relativeFilePath)];
+        console.log("parent", path.dirname(target.relativeFilePath), parent);
+        console.log(parent.children[target.relativeFilePath]);
+        console.log(path.join(path.sep, path.basename(relativeFilePath)));
+        //delete this child from parent
+        tempThis.$delete(
+          parent.children,
+          path.join(path.sep, path.basename(relativeFilePath))
+        );
+        tempThis.$delete(tempThis.Files.index, relativeFilePath);
       } else {
         console.log("did not find", relativeFilePath);
       }
@@ -940,12 +995,6 @@ export default {
       });
       return match;
     },
-    getChildrenById(id) {
-      var match = this.Assets.filter((obj) => {
-        return obj.parentId === id;
-      });
-      return match;
-    },
     updateMenu() {
       if (
         this.selectedDirectoryListItem.category ==
@@ -959,102 +1008,71 @@ export default {
         //.submenu.getMenuItemById("export_piece").enabled = false;
       }
     },
-    //set dir expandedness
-    //call this on it with makeVisible = expandedness
-    toggleDirectoryChildVisibility(id, makeVisible) {
-      var match = this.getAssetById(id);
-      console.log(
-        "toggleDirectoryChildVisibility(id, makeVisible) ",
-        match.id,
-        makeVisible
-      );
-      //for all children
-      this.getChildrenById(match.id).forEach((child) => {
-        child.visible = makeVisible;
-        //if child is dir
-        if (child.category == assetCategories.DIRECTORY) {
-          this.toggleDirectoryChildVisibility(child.id, makeVisible);
-        } else {
-          //if parent is expanded and makeVisible is true, show
-          if (match.expanded && makeVisible) {
-            //console.log("showing: ", child.id);
-            child.visible = true;
-          } else {
-            //otherwise, hide
-            //console.log("hiding: ", child.id);
-            child.visible = false;
-          }
-        }
-      });
-    },
     assetRender(id, arg) {
       var match = this.Files.index[id];
 
       //if it's a dir, expand it
       //if it's a file, open it in editor
-        this.previewOptions.html = undefined;
-        var fileExtension = getFileExtension(match.fileName);
-        if (match.category == assetCategories.DATAFILE) {
-          this.openFilePathInSpreadSheet(match.relativeFilePath);
-        } else if (match.category == assetCategories.STYLESHEET) {
-          this.cmOptions.mode = "css";
-          this.openFilePathInEditor(match.relativeFilePath);
-        } else if (match.category == assetCategories.JSON) {
-          this.cmOptions.mode = "javascript";
-          this.openFilePathInEditor(match.relativeFilePath);
-        } else if (match.category == assetCategories.TEXT) {
-          this.cmOptions.mode = undefined;
-          this.openFilePathInEditor(match.relativeFilePath);
-        } else if (match.category == assetCategories.IMAGE) {
-          this.selectedLocalFile =
-            "safe-file-protocol://" +
-            path.join(
-              this.rootDirectoryPath,
-              this.selectedDirectoryListItem.relativeFilePath
-            );
-        } else if (
-          fileExtension == "html" ||
-          match.category == assetCategories.BOX
-        ) {
-          this.previewOptions.exportName = match.fileName.split(".").shift();
-          if (match.category == assetCategories.TEMPLATE) {
-            //console.log("openFilePathInEditor", match.filePath);
-            this.cmOptions.mode = "htmlmixed";
-            this.openFilePathInEditor(match.relativeFilePath);
-
-            //get template and read it
-            //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-            var templateFilePath = match.relativeFilePath;
-            var templateContent = this.loadFile(templateFilePath);
-
-            //read datafile
-            var datafileContent = JSON.parse(
-              this.loadFile(this.datafileFilePath)
-            );
-            var extractedTemplate = this.extractBlocks(templateContent, [
-              "head",
-            ]);
-            this.previewOptions.html = "";
-            //console.log("templateContent", templateContent);
-            var template = Handlebars.compile(extractedTemplate.html);
-            this.previewOptions.body = template(datafileContent);
-            this.previewOptions.head = extractedTemplate.head;
-            this.previewOptions.box = undefined;
-          } else if (match.category == assetCategories.BOX) {
-            this.cmOptions.mode = { name: "javascript", json: true };
-            this.openFilePathInEditor(match.relativeFilePath);
-
-            //get template and read it
-            this.previewOptions.body = undefined;
-            this.previewOptions.box = JSON.parse(this.loadFile(match.relativeFilePath));
-          }
-
-          electron.ipcRenderer.send(
-            "piece-preview-opened",
-            this.previewOptions
+      this.previewOptions.html = undefined;
+      var fileExtension = getFileExtension(match.fileName);
+      if (match.category == assetCategories.DATAFILE) {
+        this.openFilePathInSpreadSheet(match.relativeFilePath);
+      } else if (match.category == assetCategories.STYLESHEET) {
+        this.cmOptions.mode = "css";
+        this.openFilePathInEditor(match.relativeFilePath);
+      } else if (match.category == assetCategories.JSON) {
+        this.cmOptions.mode = "javascript";
+        this.openFilePathInEditor(match.relativeFilePath);
+      } else if (match.category == assetCategories.TEXT) {
+        this.cmOptions.mode = undefined;
+        this.openFilePathInEditor(match.relativeFilePath);
+      } else if (match.category == assetCategories.IMAGE) {
+        this.selectedLocalFile =
+          "safe-file-protocol://" +
+          path.join(
+            this.rootDirectoryPath,
+            this.selectedDirectoryListItem.relativeFilePath
           );
+      } else if (
+        fileExtension == "html" ||
+        match.category == assetCategories.BOX
+      ) {
+        this.previewOptions.exportName = match.fileName.split(".").shift();
+        if (match.category == assetCategories.TEMPLATE) {
+          //console.log("openFilePathInEditor", match.filePath);
+          this.cmOptions.mode = "htmlmixed";
+          this.openFilePathInEditor(match.relativeFilePath);
 
-          /*
+          //get template and read it
+          //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
+          var templateFilePath = match.relativeFilePath;
+          var templateContent = this.loadFile(templateFilePath);
+
+          //read datafile
+          var datafileContent = JSON.parse(
+            this.loadFile(this.datafileFilePath)
+          );
+          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
+          this.previewOptions.html = "";
+          //console.log("templateContent", templateContent);
+          var template = Handlebars.compile(extractedTemplate.html);
+          this.previewOptions.body = template(datafileContent);
+          this.previewOptions.head = extractedTemplate.head;
+          this.previewOptions.box = undefined;
+        } else if (match.category == assetCategories.BOX) {
+          this.cmOptions.mode = { name: "javascript", json: true };
+          this.openFilePathInEditor(match.relativeFilePath);
+
+          //get template and read it
+          this.previewOptions.body = undefined;
+          this.previewOptions.box = JSON.parse(
+            this.loadFile(match.relativeFilePath)
+          );
+        }
+
+        electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
+
+        /*
           setTimeout(function () {
                         // In embedder page.
             const webview = document.querySelector("webview");
@@ -1068,12 +1086,12 @@ export default {
           }, 25);
 */
 
-          //console.log("rendered html", this.preview);
-        } else if (match.category == assetCategories.DIRECTORY) {
-          //console.log("CLICKED DIRECTORY");
-          match.expanded = !match.expanded;
-          this.toggleDirectoryChildVisibility(match.id, match.expanded);
-        }
+        //console.log("rendered html", this.preview);
+      } else if (match.category == assetCategories.DIRECTORY) {
+        //console.log("CLICKED DIRECTORY");
+        match.expanded = !match.expanded;
+        this.toggleDirectoryChildVisibility(match.id, match.expanded);
+      }
     },
   },
 };
