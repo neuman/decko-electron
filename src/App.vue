@@ -665,7 +665,7 @@ export default {
       var targetPath = target.relativeFilePath;
       //for every token starting at first
       fileTokens.forEach((fileToken) => {
-        fileToken = path.join(path.sep, fileToken);
+        //fileToken = path.join(path.sep, fileToken);
         targetPath = path.join(targetPath, fileToken);
         if (target.children[fileToken] != undefined) {
           //console.log("already exists", fileToken);
@@ -701,46 +701,14 @@ export default {
         //find the parent
         var parent =
           tempThis.Files.index[path.dirname(target.relativeFilePath)];
-        console.log("parent", path.dirname(target.relativeFilePath), parent);
+        console.log("parent of ", path.dirname(target.relativeFilePath),"is", parent);
         //delete this child from parent
         if (parent != undefined) {
-          var pointer = path.join(path.sep, path.basename(relativeFilePath));
+          var pointer = path.basename(relativeFilePath);
           console.log("pointer", pointer);
           console.log("deleting", pointer, "from", parent.relativeFilePath);
           tempThis.$delete(parent.children, pointer);
         }
-        tempThis.$delete(tempThis.Files.index, relativeFilePath);
-      } else {
-        console.log("did not find", relativeFilePath);
-      }
-    },
-    removeFileByPathz(relativeFilePath, tempThis) {
-      console.log("removing", relativeFilePath);
-      //get target from index
-      var target = tempThis.Files.index[relativeFilePath];
-      if (target != undefined) {
-        console.log("found", relativeFilePath);
-        //run this function on all children recursively
-        for (const [key, value] of Object.entries(target.children)) {
-          console.log(`${key}: ${value}`);
-          console.log(
-            "recursing on child of",
-            relativeFilePath,
-            value.relativeFilePath
-          );
-          tempThis.removeFileByPath(value.relativeFilePath, tempThis);
-        }
-        //find the parent
-        var parent =
-          tempThis.Files.index[path.dirname(target.relativeFilePath)];
-        console.log("parent", path.dirname(target.relativeFilePath), parent);
-        console.log(parent.children[target.relativeFilePath]);
-        console.log(path.join(path.sep, path.basename(relativeFilePath)));
-        //delete this child from parent
-        tempThis.$delete(
-          parent.children,
-          path.join(path.sep, path.basename(relativeFilePath))
-        );
         tempThis.$delete(tempThis.Files.index, relativeFilePath);
       } else {
         console.log("did not find", relativeFilePath);
