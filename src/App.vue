@@ -279,6 +279,10 @@ export default {
     electron.ipcRenderer.on("magnetizeOpenFile", (event, arg) => {
       this.magnetizeOpenFile();
     });
+    electron.ipcRenderer.removeAllListeners("toggleLineWrapping");
+    electron.ipcRenderer.on("toggleLineWrapping", (event, arg) => {
+      this.toggleLineWrapping();
+    });
     electron.ipcRenderer.removeAllListeners("formatOpenFile");
     electron.ipcRenderer.on("formatOpenFile", (event, arg) => {
       this.formatOpenFile();
@@ -315,33 +319,6 @@ export default {
       openFile: undefined,
       Assets: [],
       Files: {},
-      rootFake: {
-        label: "root",
-        depth: 0,
-        children: {
-          b3: {
-            label: "b3",
-            depth: 1,
-            children: {
-              a3: {
-                label: "a3",
-                depth: 2,
-                children: [],
-              },
-              b3: {
-                label: "b3",
-                depth: 2,
-                children: [],
-              },
-              c3: {
-                label: "c3",
-                depth: 2,
-                children: [],
-              },
-            },
-          },
-        },
-      },
       DataSheets: [],
       msg: undefined,
       spreadsheet: undefined,
@@ -357,6 +334,7 @@ export default {
         theme: "tomorrow-night-eighties",
         lineNumbers: true,
         line: true,
+        lineWrapping:true,
         matchTags: { bothTags: true },
       },
       previewOptions: {
@@ -370,7 +348,7 @@ export default {
   methods: {
     debugAction() {
       //console.log(this.Assets);
-      console.log("Files", this.Files);
+      console.log("this", this);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
       /*
@@ -422,6 +400,11 @@ export default {
     },
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
+    },
+    toggleLineWrapping(){
+      console.log('toggle lineWrapping to ', !this.cmOptions.lineWrapping);
+      this.cmOptions.lineWrapping = !this.cmOptions.lineWrapping;
+      
     },
     loadFile(filePath, absoloute) {
       var myPath = filePath;

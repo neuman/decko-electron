@@ -241,6 +241,12 @@ app.on('ready', async () => {
             win.webContents.send('magnetizeOpenFile', '');
           }
         },
+        {
+          label: 'Toggle Wrapping',
+          click: function () {
+            win.webContents.send('toggleLineWrapping', '');
+          }
+        },
         { type: 'separator' },
         { role: 'resetzoom' },
         { role: 'zoomin' },
