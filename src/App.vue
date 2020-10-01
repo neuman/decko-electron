@@ -438,6 +438,7 @@ export default {
     formatOpenFile() {
       if (this.$refs.editor != undefined) {
         console.log(this.$refs.editor);
+        this.$refs.editor.codemirror.selectAllCtrl();
         this.$refs.editor.codemirror.autoFormatRange(
           this.$refs.editor.codemirror.getCursor(true),
           this.$refs.editor.codemirror.getCursor(false)
@@ -542,7 +543,7 @@ export default {
               );
               if (path.basename(path.dirname(pathIn)) != "output") {
                 tempThis.assetRender(
-                  tempThis.selectedDirectoryListItem.id,
+                  tempThis.selectedDirectoryListItem.relativeFilePath,
                   false
                 );
               }
