@@ -1,12 +1,36 @@
 <template>
   <div id="app" class="h-100">
-    <b-modal ref="my-modal" title="Are You Sure?" @ok="importAllDataDialog">
+    <b-modal ref="import-modal" title="Are You Sure?" @ok="importAllDataDialog">
       <div class="d-block text-center">
         <p class="my-4">
           Importing will wipe out all old data and replace it with the incoming
           data file contents.
         </p>
       </div>
+    </b-modal>
+    <b-modal
+      id="modal-prevent-closing"
+      ref="new-project-modal"
+      title="Submit Your Name"
+      @show="resetModal"
+      @hidden="resetModal"
+      @ok="handleOk"
+    >
+      <form ref="form" @submit.stop.prevent="handleSubmit">
+        <b-form-group
+          :state="nameState"
+          label="Name"
+          label-for="name-input"
+          invalid-feedback="Name is required"
+        >
+          <b-form-input
+            id="name-input"
+            v-model="name"
+            :state="nameState"
+            required
+          ></b-form-input>
+        </b-form-group>
+      </form>
     </b-modal>
     <splitpanes class="default-theme">
       <pane size="30" class="bg-light overflow-y-handled">
@@ -257,7 +281,8 @@ export default {
     });
     electron.ipcRenderer.removeAllListeners("newProject");
     electron.ipcRenderer.on("newProject", (event, arg) => {
-      this.newProjectDialog();
+      //this.newProjectDialog();
+      this.showNewProjectModal();
     });
     electron.ipcRenderer.removeAllListeners("saveProject");
     electron.ipcRenderer.on("saveProject", (event, arg) => {
@@ -334,7 +359,7 @@ export default {
         theme: "tomorrow-night-eighties",
         lineNumbers: true,
         line: true,
-        lineWrapping:true,
+        lineWrapping: true,
         matchTags: { bothTags: true },
       },
       previewOptions: {
@@ -346,8 +371,37 @@ export default {
     };
   },
   methods: {
+    checkFormValidity() {
+        const valid = this.$refs.form.checkValidity()
+        this.nameState = valid
+        return valid
+      },
+      resetModal() {
+        this.name = ''
+        this.nameState = null
+      },
+      handleOk(bvModalEvt) {
+        // Prevent modal from closing
+        bvModalEvt.preventDefault()
+        // Trigger submit handler
+        this.handleSubmit()
+      },
+      handleSubmit() {
+        // Exit when the form isn't valid
+        if (!this.checkFormValidity()) {
+          return
+        }
+        // Push the name to submitted names
+        //this.submittedNames.push(this.name)
+        this.newProjectDialog();
+        // Hide the modal manually
+        this.$nextTick(() => {
+          this.$bvModal.hide('modal-prevent-closing')
+        })
+      },
     debugAction() {
       //console.log(this.Assets);
+      this.$refs.editor.codemirror.clearHistory();
       console.log("this", this);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
@@ -401,10 +455,9 @@ export default {
     handleFileChange(filePath) {
       console.log("fileChange", filePath);
     },
-    toggleLineWrapping(){
-      console.log('toggle lineWrapping to ', !this.cmOptions.lineWrapping);
+    toggleLineWrapping() {
+      console.log("toggle lineWrapping to ", !this.cmOptions.lineWrapping);
       this.cmOptions.lineWrapping = !this.cmOptions.lineWrapping;
-      
     },
     loadFile(filePath, absoloute) {
       var myPath = filePath;
@@ -422,7 +475,7 @@ export default {
     exportOpenFile() {
       this.previewOptions.doExport = true;
       this.assetSelected(
-        this.selectedDirectoryListItem.id,
+        this.selectedDirectoryListItem.relativeFilePath,
         this.previewOptions
       );
       this.previewOptions.doExport = false;
@@ -431,14 +484,15 @@ export default {
       this.previewOptions.doExport = false;
       this.previewOptions.doMagnetize = !this.previewOptions.doMagnetize;
       this.assetSelected(
-        this.selectedDirectoryListItem.id,
+        this.selectedDirectoryListItem.relativeFilePath,
         this.previewOptions
       );
     },
     formatOpenFile() {
       if (this.$refs.editor != undefined) {
         console.log(this.$refs.editor);
-        this.$refs.editor.codemirror.selectAllCtrl();
+        //this.$refs.editor.codemirror.clearHistory();
+        //this.$refs.editor.codemirror.selectAll();
         this.$refs.editor.codemirror.autoFormatRange(
           this.$refs.editor.codemirror.getCursor(true),
           this.$refs.editor.codemirror.getCursor(false)
@@ -446,11 +500,12 @@ export default {
       }
     },
     newProjectDialog() {
+      //
       dialog
         .showOpenDialog({
           title: "Select an empty folder to create your new project in.",
           filters: [{ name: "Folders", extensions: ["*"] }],
-          properties: ["openDirectory"],
+          properties: ["openDirectory", "createDirectory"],
         })
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
@@ -458,9 +513,6 @@ export default {
           this.rootDirectoryPath = directoryPath;
           //fs.mkdirSync(directoryPath+"/NewProject");
           this.saveProject();
-          fs.mkdirSync(
-            path.join(this.rootDirectoryPath, staticStrings.DECKODIRNAME)
-          );
           electron.ipcRenderer.send(
             "project-file-opened",
             this.rootDirectoryPath
@@ -655,7 +707,7 @@ export default {
           //console.log("already exists", fileToken);
           target = target.children[fileToken];
         } else {
-          console.log("creating", fileToken);
+          //console.log("creating", fileToken);
           var isDirectory = false;
           if (
             fs
@@ -676,26 +728,26 @@ export default {
       return target;
     },
     removeFileByPath(relativeFilePath, tempThis) {
-      console.log("removing", relativeFilePath);
+      //console.log("removing", relativeFilePath);
       //get target from index
       var target = tempThis.Files.index[relativeFilePath];
       if (target != undefined) {
-        console.log("found", relativeFilePath);
+        //console.log("found", relativeFilePath);
         //run this function on all children recursively
         //find the parent
         var parent =
           tempThis.Files.index[path.dirname(target.relativeFilePath)];
-        console.log("parent of ", path.dirname(target.relativeFilePath),"is", parent);
+        //console.log("parent of ", path.dirname(target.relativeFilePath),"is", parent);
         //delete this child from parent
         if (parent != undefined) {
           var pointer = path.basename(relativeFilePath);
-          console.log("pointer", pointer);
-          console.log("deleting", pointer, "from", parent.relativeFilePath);
+          //console.log("pointer", pointer);
+          //console.log("deleting", pointer, "from", parent.relativeFilePath);
           tempThis.$delete(parent.children, pointer);
         }
         tempThis.$delete(tempThis.Files.index, relativeFilePath);
       } else {
-        console.log("did not find", relativeFilePath);
+        //("did not find", relativeFilePath);
       }
     },
     addDataSheet(label) {
@@ -732,6 +784,7 @@ export default {
 
       //console.log(output);
       this.msg = output;
+      //this.$refs.editor.codemirror.clearHistory();
     },
     jsonArrayTo2D(arrayOfObjects) {
       let header = [],
@@ -793,12 +846,14 @@ export default {
       console.log("File written successfully\n");
     },
     showImportAllWarning() {
-      console.log(this.Assets);
-      if (this.Assets.length > 0) {
-        this.$refs["my-modal"].show();
-      } else {
-        this.importAllDataDialog();
-      }
+      console.log("showImportAllWarning");
+      this.$refs["import-modal"].show();
+      this.importAllDataDialog();
+    },
+    showNewProjectModal() {
+      console.log("showImportAllWarning");
+      this.$refs["new-project-modal"].show();
+      this.importAllDataDialog();
     },
     buildPieceFromData(pieceData) {
       var block = "";
@@ -933,6 +988,10 @@ export default {
     },
     assetSelected(id) {
       console.log("assetSelected", id);
+       if (this.$refs.editor != undefined) {
+         console.log("clearHistory", this.$refs.editor.codemirror);
+      this.$refs.editor.codemirror.clearHistory();
+       }
       this.selectedDirectoryListItem = this.Files.index[id];
       console.log(
         "this.selectedDirectoryListItem",

@@ -55,7 +55,7 @@ export_all = function () {
     console.log('exporting element', arg.exportName, index, element);
     $(element).addClass('scale-up');
     // do work 
-    window.scrollTo(0, 0);
+    //window.scrollTo({top:0, left:0, behavior:'instant'});
     html2canvas(element[0],
       {
         backgroundColor: null,
@@ -66,7 +66,7 @@ export_all = function () {
 
         $.ajax({
           type: "POST",
-          url: "/" + arg.exportName + "-" + index,
+          url: "/" + arg.exportName + "-magnetic-" +arg.doMagnetize + "-" + index,
           data: {
             imgBase64: dataURL
           }

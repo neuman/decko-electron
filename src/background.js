@@ -222,7 +222,7 @@ app.on('ready', async () => {
             { role: 'selectAll' }
           ]),
         {
-          label: 'Format Document',
+          label: 'Format Selection',
           id: 'format_document',
           accelerator: 'CmdOrCtrl+Shift+I',
           click: function () {
@@ -339,8 +339,8 @@ var port = 3000;
 
 var server = http.createServer((req, res) => {
   res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Panda, World!\n');
+  res.setHeader('Content-Type', 'text/html');
+  res.end('<head><style>body {background-color: #181818;color:#ffffff;font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; font-size: 0.9375rem; font-weight: 400;}</style></head><body>JSON Invalid</body>\n');
 });
 console.log('made new server');
 
