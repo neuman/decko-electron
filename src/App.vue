@@ -1,4 +1,5 @@
 <template>
+
   <div id="app" class="h-100">
     <b-modal ref="import-modal" title="Are You Sure?" @ok="importAllDataDialog">
       <div class="d-block text-center">
@@ -32,7 +33,7 @@
         </b-form-group>
       </form>
     </b-modal>
-    <splitpanes class="default-theme">
+    <splitpanes v-if="rootDirectoryPath" class="default-theme">
       <pane size="30" class="bg-light overflow-y-handled">
         <nested-asset-list-item
           :label="Files.label"
@@ -260,7 +261,7 @@ export default {
   },
   created: function () {
     if (process.env.NODE_ENV == "development") {
-      this.openProjectFile("/home/neuman/TEST/project.dko");
+      //this.openProjectFile("/home/neuman/TEST/project.dko");
     }
     /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
@@ -341,6 +342,9 @@ export default {
     return {
       rootDirectoryPath: undefined,
       selectedDirectoryListItem: undefined,
+      projectName:undefined,
+      name:undefined,
+      nameState:undefined,
       openFile: undefined,
       Assets: [],
       Files: {},
@@ -393,6 +397,7 @@ export default {
         }
         // Push the name to submitted names
         //this.submittedNames.push(this.name)
+        this.projectName = this.name;
         this.newProjectDialog();
         // Hide the modal manually
         this.$nextTick(() => {
@@ -503,20 +508,26 @@ export default {
       //
       dialog
         .showOpenDialog({
-          title: "Select an empty folder to create your new project in.",
+          title: "Select which directory to create your new project in.",
           filters: [{ name: "Folders", extensions: ["*"] }],
           properties: ["openDirectory", "createDirectory"],
         })
         .then((filenames) => {
           //console.log(filenames.filePaths[0]);
           var directoryPath = filenames.filePaths[0];
-          this.rootDirectoryPath = directoryPath;
-          //fs.mkdirSync(directoryPath+"/NewProject");
+          this.rootDirectoryPath = directoryPath+"/"+this.projectName;
+          fs.mkdirSync(directoryPath+"/"+this.projectName);
+          fs.mkdirSync(directoryPath+"/"+this.projectName+"/styles");
+          fs.mkdirSync(directoryPath+"/"+this.projectName+"/images");
+          fs.mkdirSync(directoryPath+"/"+this.projectName+"/fonts");
+          fs.mkdirSync(directoryPath+"/"+this.projectName+"/templates");
+          fs.mkdirSync(directoryPath+"/"+this.projectName+"/output");
           this.saveProject();
           electron.ipcRenderer.send(
             "project-file-opened",
             this.rootDirectoryPath
           );
+          this.openProjectFile(this.rootDirectoryPath+"/project.dko");
         });
     },
     openProjectDialog() {
@@ -534,7 +545,7 @@ export default {
         });
     },
     openProjectFile(filePath) {
-      this.datafileFilePath = path.join("decko", "datafile.dkod");
+      this.datafileFilePath = path.join("project.json");
       this.rootDirectoryPath = path.dirname(filePath);
       //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
@@ -553,6 +564,14 @@ export default {
       var tempThis = this;
 
       watcher
+        .on("addDir", function (pathIn) {
+          //console.log("File", pathIn, "has been added");
+          //tempThis.addAssetFromFilePath(pathIn, tempThis);
+          tempThis.getOrCreateFileByPath(
+            tempThis.getRootDirectoryRelativePath(pathIn),
+            tempThis
+          );
+        })
         .on("add", function (pathIn) {
           //console.log("File", pathIn, "has been added");
           //tempThis.addAssetFromFilePath(pathIn, tempThis);
