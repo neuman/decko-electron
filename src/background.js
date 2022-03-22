@@ -157,6 +157,7 @@ app.on('ready', async () => {
             win.webContents.send('saveProject', '');
           }
         },
+        { type: 'separator' },
         {
           label: 'New File',
           accelerator: 'CmdOrCtrl+N',
@@ -164,20 +165,19 @@ app.on('ready', async () => {
             win.webContents.send('newFile', '');
           }
         },
-        { type: 'separator' },
-        {
-          label: 'Import All',
-          accelerator: 'CmdOrCtrl+I',
-          click: function () {
-            win.webContents.send('importAllData', '');
-          }
-        },
-        { type: 'separator' },
         {
           label: 'Save Open File',
           accelerator: 'CmdOrCtrl+S',
           click: function () {
             win.webContents.send('saveOpenFile', '');
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Generate Default Templates',
+          accelerator: 'CmdOrCtrl+I',
+          click: function () {
+            win.webContents.send('importAllData', '');
           }
         },
         { type: 'separator' },
@@ -491,6 +491,10 @@ function generateServer(arg) {
   win.webContents.send('setIframeURL', 'http://' + hostname + ':' + port + '/');
 
 }
+
+//modify one menu item
+//Menu.getApplicationMenu().getMenuItemById('revert-changes').enabled
+
 //var currentArg;
 ipcMain.on('piece-preview-opened', (event, arg) => {
   //currentArg = arg;

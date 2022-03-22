@@ -287,7 +287,7 @@ export default {
     electron.ipcRenderer.removeAllListeners("newProject");
     electron.ipcRenderer.on("newProject", (event, arg) => {
       //this.newProjectDialog();
-      this.showNewProjectModal();
+      this.newProjectDialog();
     });
     electron.ipcRenderer.removeAllListeners("saveProject");
     electron.ipcRenderer.on("saveProject", (event, arg) => {
@@ -511,27 +511,28 @@ export default {
     newProjectDialog() {
       //
       dialog
-        .showOpenDialog({
+        .showSaveDialog({
           title: "Select which directory to create your new project in.",
-          filters: [{ name: "Folders", extensions: ["*"] }],
-          properties: ["openDirectory", "createDirectory"],
+          properties: ["createDirectory"],
         })
-        .then((filenames) => {
-          //console.log(filenames.filePaths[0]);
-          var directoryPath = filenames.filePaths[0];
-          this.rootDirectoryPath = directoryPath+"/"+this.projectName;
-          fs.mkdirSync(directoryPath+"/"+this.projectName);
-          fs.mkdirSync(directoryPath+"/"+this.projectName+"/styles");
-          fs.mkdirSync(directoryPath+"/"+this.projectName+"/images");
-          fs.mkdirSync(directoryPath+"/"+this.projectName+"/fonts");
-          fs.mkdirSync(directoryPath+"/"+this.projectName+"/templates");
-          fs.mkdirSync(directoryPath+"/"+this.projectName+"/output");
+        .then((results) => {
+          console.log("newProject:", results.filePath);
+          var directoryPath =  path.dirname(results.filePath);
+          //this.projectName = results.filePath;
+          this.rootDirectoryPath = results.filePath;
+          fs.mkdirSync(results.filePath);
+          fs.writeFileSync(results.filePath+"/project.json", JSON.stringify({}));
+          fs.mkdirSync(results.filePath+"/styles");
+          fs.mkdirSync(results.filePath+"/images");
+          fs.mkdirSync(results.filePath+"/fonts");
+          fs.mkdirSync(results.filePath+"/templates");
+          fs.mkdirSync(results.filePath+"/output");
           this.saveProject();
           electron.ipcRenderer.send(
             "project-file-opened",
             this.rootDirectoryPath
           );
-          this.openProjectFile(this.rootDirectoryPath+"/project.dko");
+          this.openProjectFile(results.filePath+"/project.dko");
         });
     },
     openProjectDialog() {
