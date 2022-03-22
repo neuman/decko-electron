@@ -17,7 +17,7 @@
       @hidden="resetModal"
       @ok="handleOk"
     >
-      <form ref="form" @submit.stop.prevent="handleSubmit">
+      <form ref="form" @submit.stop.prevent="newProjectHandleSubmit">
         <b-form-group
           :state="nameState"
           label="Name"
@@ -280,6 +280,10 @@ export default {
     electron.ipcRenderer.on("openProject", (event, arg) => {
       this.openProjectDialog();
     });
+    electron.ipcRenderer.removeAllListeners("newFile");
+    electron.ipcRenderer.on("newFile", (event, arg) => {
+      this.newFileDialog();
+    });
     electron.ipcRenderer.removeAllListeners("newProject");
     electron.ipcRenderer.on("newProject", (event, arg) => {
       //this.newProjectDialog();
@@ -388,9 +392,9 @@ export default {
         // Prevent modal from closing
         bvModalEvt.preventDefault()
         // Trigger submit handler
-        this.handleSubmit()
+        this.newProjectHandleSubmit()
       },
-      handleSubmit() {
+      newProjectHandleSubmit() {
         // Exit when the form isn't valid
         if (!this.checkFormValidity()) {
           return
@@ -694,6 +698,19 @@ export default {
         }
       }); //s
       */
+    },
+    newFileDialog() {
+      dialog
+        .showSaveDialog({
+          title: "Create a new HTML or CSS file.",
+          properties: ["createDirectory"],
+          defaultPath:this.rootDirectoryPath
+        })
+        .then((results) => {
+          console.log("newFile", results.filePath);
+          fs.writeFileSync(path.join(results.filePath),"");
+          this.openFile(path.join(results.filePath));
+        });
     },
     createFileObject(label, relativeFilePath, isDirectory) {
       return {

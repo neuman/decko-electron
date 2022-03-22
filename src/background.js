@@ -99,6 +99,12 @@ app.on('ready', async () => {
           click: function () {
             win.webContents.send('hello', 'Hello World!');
           }
+        },
+        {
+          label: 'New File',
+          click: function () {
+            win.webContents.send('newFile', 'Hello World!');
+          }
         }
       ]
     }
@@ -149,6 +155,13 @@ app.on('ready', async () => {
           label: 'Save Project',
           click: function () {
             win.webContents.send('saveProject', '');
+          }
+        },
+        {
+          label: 'New File',
+          accelerator: 'CmdOrCtrl+N',
+          click: function () {
+            win.webContents.send('newFile', '');
           }
         },
         { type: 'separator' },
