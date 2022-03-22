@@ -30,6 +30,7 @@
     "create-html-element": "^3.0.0",
     "electron-context-menu": "^2.3.0",
     "emmet": "git+https://github.com/cloud9ide/emmet-core.git#41973fcc70392864c7a469cf5dcd875b88b93d4a",
+    "fs-extra": "^10.0.1",
     "handlebars": "^4.7.6",
     "handsontable": "^8.0.0",
     "helper-markdown": "^1.0.0",

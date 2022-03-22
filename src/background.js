@@ -6,6 +6,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const createHtmlElement = require('create-html-element');
+const electron = require('electron');
 const path = require('path')
 var mime = require('mime-types')
 
@@ -83,7 +84,7 @@ app.on('ready', async () => {
   }
   createWindow()
 
-  const electron = require('electron');
+  
   var menu = electron.Menu.buildFromTemplate([
     {
       label: 'File',
@@ -153,6 +154,8 @@ app.on('ready', async () => {
         },
         {
           label: 'Save Project',
+          id: 'save_project',
+          enabled: false,
           click: function () {
             win.webContents.send('saveProject', '');
           }
@@ -167,7 +170,9 @@ app.on('ready', async () => {
         },
         {
           label: 'Save Open File',
+          id: 'save_open_file',
           accelerator: 'CmdOrCtrl+S',
+          enabled:false,
           click: function () {
             win.webContents.send('saveOpenFile', '');
           }
@@ -368,7 +373,9 @@ server = http.createServer((req, res) => {
 });
 
 const { ipcMain } = require('electron')
-import fs from "fs";
+//import fs from "fs";
+const fs = require('fs-extra')
+
 
 ipcMain.on('asynchronous-message', (event, arg) => {
   port += 1;
@@ -492,8 +499,28 @@ function generateServer(arg) {
 
 }
 
-//modify one menu item
-//Menu.getApplicationMenu().getMenuItemById('revert-changes').enabled
+ipcMain.on('copy-default-project', (event, arg) => {
+  fs.copySync(getPublicPath('default_assets'), arg.destDir, function (err) {
+    if (err) {
+      console.error(err);      
+    } else {
+      console.log("success!");
+    }
+  });
+  
+})
+
+ipcMain.on('get-text-asset', (event, arg) => {
+  //currentArg = arg;
+  event.returnValue = loadFile(getPublicPath(path.join('default_assets', arg.filePath)));
+})
+
+
+ipcMain.on('menu-item-toggled', (event, arg) => {
+  electron.Menu.getApplicationMenu().getMenuItemById(arg.menuItemID).enabled = arg.enabled;
+  event.returnValue = arg;
+})
+
 
 //var currentArg;
 ipcMain.on('piece-preview-opened', (event, arg) => {

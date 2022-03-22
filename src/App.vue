@@ -409,9 +409,10 @@ export default {
         })
       },
     debugAction() {
+      console.log(electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
       //console.log(this.Assets);
-      this.$refs.editor.codemirror.clearHistory();
-      console.log("this", this);
+      //this.$refs.editor.codemirror.clearHistory();
+      //console.log("this", this);
       //getCurrentWebContents().send("setIframeURL", "http://www.google.com");
       //console.log(this.Assets);
       /*
@@ -520,14 +521,16 @@ export default {
           var directoryPath =  path.dirname(results.filePath);
           //this.projectName = results.filePath;
           this.rootDirectoryPath = results.filePath;
-          fs.mkdirSync(results.filePath);
-          fs.writeFileSync(results.filePath+"/project.json", JSON.stringify({}));
+          /*fs.mkdirSync(results.filePath);
+          fs.writeFileSync(results.filePath+"/project.dkod", JSON.stringify({}));
           fs.mkdirSync(results.filePath+"/styles");
+          fs.writeFileSync(results.filePath+"/styles/project.css", electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
           fs.mkdirSync(results.filePath+"/images");
           fs.mkdirSync(results.filePath+"/fonts");
           fs.mkdirSync(results.filePath+"/templates");
           fs.mkdirSync(results.filePath+"/output");
-          this.saveProject();
+          this.saveProject();*/
+          electron.ipcRenderer.send("copy-default-project", {destDir:results.filePath});
           electron.ipcRenderer.send(
             "project-file-opened",
             this.rootDirectoryPath
@@ -550,7 +553,7 @@ export default {
         });
     },
     openProjectFile(filePath) {
-      this.datafileFilePath = path.join("project.json");
+      this.datafileFilePath = path.join("project.dkod");
       this.rootDirectoryPath = path.dirname(filePath);
       //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
@@ -629,7 +632,9 @@ export default {
         .on("error", function (error) {
           console.error("Error happened", error);
         });
-
+      
+      electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:false});
+      electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_project", enabled:true});
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {
@@ -1057,6 +1062,8 @@ export default {
       }
     },
     assetRender(id, arg) {
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:false});
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:false});
       var match = this.Files.index[id];
 
       //if it's a dir, expand it
@@ -1068,12 +1075,15 @@ export default {
       } else if (match.category == assetCategories.STYLESHEET) {
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
       } else if (match.category == assetCategories.TEXT) {
         this.cmOptions.mode = undefined;
         this.openFilePathInEditor(match.relativeFilePath);
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+
       } else if (match.category == assetCategories.IMAGE) {
         this.selectedLocalFile =
           "safe-file-protocol://" +
@@ -1135,6 +1145,8 @@ export default {
 */
 
         //console.log("rendered html", this.preview);
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:true});
       } else if (match.category == assetCategories.DIRECTORY) {
         //console.log("CLICKED DIRECTORY");
         match.expanded = !match.expanded;
