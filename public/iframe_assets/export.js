@@ -66,7 +66,7 @@ export_all = function () {
 
         $.ajax({
           type: "POST",
-          url: "/" + arg.exportName + "-magnetic-" +arg.doMagnetize + "-" + index,
+          url: "/" + arg.exportName + ((arg.doMagnetize) ? '-magnetic' : '')+ "-" + index,
           data: {
             imgBase64: dataURL
           }

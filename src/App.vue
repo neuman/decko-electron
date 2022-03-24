@@ -51,7 +51,7 @@
           <div
             class="h-100"
             v-if="
-              ['box', 'template'].includes(
+              ['box', 'template', 'stylesheet'].includes(
                 this.selectedDirectoryListItem.category
               )
             "
@@ -152,6 +152,10 @@
         </div>
       </pane>
     </splitpanes>
+    <div v-else class="text-center">
+      <img v-bind:src="require('./assets/decko-logo.png')" />
+      <p> Use the File menu to create a new project or open an existing one.</p>
+    </div>
   </div>
 </template>
 1
@@ -621,13 +625,17 @@ export default {
                 path.basename(path.dirname(pathIn))
               );
               if (path.basename(path.dirname(pathIn)) != "output") {
-                tempThis.assetRender(
+                /*tempThis.assetRender(
                   tempThis.selectedDirectoryListItem.relativeFilePath,
                   false
-                );
+                );*/
+                electron.ipcRenderer.send("piece-preview-opened", tempThis.previewOptions);
               }
+            }else{
+          electron.ipcRenderer.send("piece-preview-opened", tempThis.previewOptions);
             }
           }
+
         })
         .on("error", function (error) {
           console.error("Error happened", error);
@@ -1068,7 +1076,7 @@ export default {
 
       //if it's a dir, expand it
       //if it's a file, open it in editor
-      this.previewOptions.html = undefined;
+      //this.previewOptions.html = undefined;
       var fileExtension = getFileExtension(match.fileName);
       if (match.category == assetCategories.DATAFILE) {
         this.openFilePathInSpreadSheet(match.relativeFilePath);
@@ -1076,6 +1084,7 @@ export default {
         electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
+        
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
