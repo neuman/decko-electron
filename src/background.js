@@ -293,6 +293,7 @@ app.on('ready', async () => {
           { role: 'toggledevtools' },
           {
             label: 'Open Webview Devtools',
+            accelerator: 'CmdOrCtrl+D',
             click: function () {
               win.webContents.send('openWebViewDevTools', '');
             }
@@ -357,7 +358,7 @@ var port = 3000;
 
 var server = http.createServer((req, res) => {
   res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.end('<head><style>body {background-color: #181818;color:#ffffff;font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; font-size: 0.9375rem; font-weight: 400;}</style></head><body>JSON Invalid</body>\n');
 });
 console.log('made new server');
@@ -374,7 +375,7 @@ server = http.createServer((req, res) => {
 
 const { ipcMain } = require('electron')
 //import fs from "fs";
-const fs = require('fs-extra')
+const fse = require('fs-extra')
 
 
 ipcMain.on('asynchronous-message', (event, arg) => {
@@ -399,7 +400,7 @@ ipcMain.on('asynchronous-message', (event, arg) => {
 
 function loadFile(filePath) {
   var output = undefined;
-  output = fs.readFileSync(filePath, "utf8", (err, data) => {
+  output = fse.readFileSync(filePath, "utf8", (err, data) => {
     if (err) throw err;
     //console.log(data);
     output = data;
@@ -430,7 +431,7 @@ function generateServer(arg) {
         var decodedBody = decodeURIComponent(body);
         var base64Data = decodedBody.split(';base64,').pop();
         //console.log('stripped body:',base64Data);
-        fs.writeFile(path.join(rootDirectoryPath, 'output', request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
+        fse.writeFile(path.join(rootDirectoryPath, 'output', request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
           console.log(err);
         });
         response.writeHead(200, { 'Content-Type': 'text/html' })
@@ -466,7 +467,7 @@ function generateServer(arg) {
             "<canvas id='threeCanvas' class='exportable' style=' width: 100%; height: 100%;'></canvas><button class='export_ignore' onclick='export_all()'>Export</button>");
         }
         response.statusCode = 200;
-        response.setHeader('Content-Type', 'text/html');
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
         response.end(html);
       } else if (request.url.split(".").pop() in ["css", "js"]) {
         console.log('got filename, looking up...');
@@ -477,10 +478,10 @@ function generateServer(arg) {
       } else {
         console.log('got other, looking up...');
         console.log(path.join(rootDirectoryPath, request.url));
-        if ((fs.existsSync(path.join(rootDirectoryPath, request.url))) && (fs.lstatSync(path.join(rootDirectoryPath, request.url)).isDirectory() != true)) {
+        if ((fse.existsSync(path.join(rootDirectoryPath, request.url))) && (fse.lstatSync(path.join(rootDirectoryPath, request.url)).isDirectory() != true)) {
           response.writeHead(200, { "Content-type": mime.lookup(request.url.split("/").pop()) });
           //response.end("Test");
-          var stream = fs.createReadStream(path.join(rootDirectoryPath, request.url));
+          var stream = fse.createReadStream(path.join(rootDirectoryPath, request.url));
           stream.pipe(response);
         }
         else {
@@ -500,7 +501,7 @@ function generateServer(arg) {
 }
 
 ipcMain.on('copy-default-project', (event, arg) => {
-  fs.copySync(getPublicPath('default_assets'), arg.destDir, function (err) {
+  fse.copy(getPublicPath('default_assets'), arg.destDir, function (err) {
     if (err) {
       console.error(err);      
     } else {

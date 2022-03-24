@@ -323,7 +323,7 @@ export default {
     });
     electron.ipcRenderer.removeAllListeners("openWebViewDevTools");
     electron.ipcRenderer.on("openWebViewDevTools", (event, arg) => {
-      document.querySelector("webview").openDevTools();
+      document.querySelector("webview").openDevTools({ mode: 'undocked' });
     });
   },
   updated() {
@@ -1073,16 +1073,16 @@ export default {
       if (match.category == assetCategories.DATAFILE) {
         this.openFilePathInSpreadSheet(match.relativeFilePath);
       } else if (match.category == assetCategories.STYLESHEET) {
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
       } else if (match.category == assetCategories.TEXT) {
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
         this.cmOptions.mode = undefined;
         this.openFilePathInEditor(match.relativeFilePath);
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
 
       } else if (match.category == assetCategories.IMAGE) {
         this.selectedLocalFile =
@@ -1095,6 +1095,8 @@ export default {
         fileExtension == "html" ||
         match.category == assetCategories.BOX
       ) {
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:true});
         this.previewOptions.exportName = match.fileName.split(".").shift();
         if (match.category == assetCategories.TEMPLATE) {
           //console.log("openFilePathInEditor", match.filePath);
@@ -1145,8 +1147,7 @@ export default {
 */
 
         //console.log("rendered html", this.preview);
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:true});
+
       } else if (match.category == assetCategories.DIRECTORY) {
         //console.log("CLICKED DIRECTORY");
         match.expanded = !match.expanded;

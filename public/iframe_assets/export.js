@@ -159,7 +159,7 @@ render_box = function () {
       boxHeight = frontTexture.image.height / frontTexture.image.width;
     } else {
       boxHeight = 1;
-      boxWidth = frontTexture.image.wid / frontTexture.image.width;
+      boxWidth = frontTexture.image.width / frontTexture.image.height;
     }
     boxDepth = topTexture.image.height / topTexture.image.width;
 

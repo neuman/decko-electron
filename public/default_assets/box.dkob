@@ -1,0 +1,9 @@
+{
+    "front":"/output/boxart-magnetic-false-1.png",
+    "back":"/output/boxart-magnetic-false-1.png",
+    "top":"/output/boxart-magnetic-false-2.png",
+    "bottom":"/output/boxart-magnetic-false-2.png",
+    "left":"/output/boxart-magnetic-false-3.png",
+    "right":"/output/boxart-magnetic-false-3.png",
+    "camera":{"x": 0.8907969774205287, "y": 0.5955038252281064, "z": 0.6286867337424427}
+}
