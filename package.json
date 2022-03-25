@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "author": {
-    "name": "Barney Rubble",
-    "email": "b@rubble.com",
-    "url": "http://barnyrubble.tumblr.com/"
+    "name": "Eric Neuman",
+    "email": "eric@theneuman.com",
+    "url": "http://www.theneuman.com"
   },
   "scripts": {
     "serve": "vue-cli-service serve",
