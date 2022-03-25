@@ -84,7 +84,7 @@ app.on('ready', async () => {
   }
   createWindow()
 
-  
+
   var menu = electron.Menu.buildFromTemplate([
     {
       label: 'File',
@@ -172,7 +172,7 @@ app.on('ready', async () => {
           label: 'Save Open File',
           id: 'save_open_file',
           accelerator: 'CmdOrCtrl+S',
-          enabled:false,
+          enabled: false,
           click: function () {
             win.webContents.send('saveOpenFile', '');
           }
@@ -235,10 +235,10 @@ app.on('ready', async () => {
             ]
           }
         ] : [
-            { role: 'delete' },
-            { type: 'separator' },
-            { role: 'selectAll' }
-          ]),
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ]),
         {
           label: 'Format Selection',
           id: 'format_document',
@@ -285,19 +285,19 @@ app.on('ready', async () => {
           { type: 'separator' },
           { role: 'window' }
         ] : [
-            { role: 'close' }
-          ]),
-          { type: 'separator' },
-          { role: 'reload' },
-          { role: 'forcereload' },
-          { role: 'toggledevtools' },
-          {
-            label: 'Open Webview Devtools',
-            accelerator: 'CmdOrCtrl+D',
-            click: function () {
-              win.webContents.send('openWebViewDevTools', '');
-            }
-          },
+          { role: 'close' }
+        ]),
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'forcereload' },
+        { role: 'toggledevtools' },
+        {
+          label: 'Open Webview Devtools',
+          accelerator: 'CmdOrCtrl+D',
+          click: function () {
+            win.webContents.send('openWebViewDevTools', '');
+          }
+        },
       ]
     },
     {
@@ -501,30 +501,66 @@ function generateServer(arg) {
 
 }
 
-const copyDirRecursive = function(dirPath, dest, arrayOfFiles) {
+const copyDirRecursive = function (dirPath, dest, arrayOfFiles) {
   var files = fse.readdirSync(dirPath)
 
   arrayOfFiles = arrayOfFiles || []
 
-  files.forEach(function(file) {
+  files.forEach(function (file) {
     if (fse.statSync(dirPath + "/" + file).isDirectory()) {
       console.log("create dir:", dest + "/" + file);
-      arrayOfFiles = copyDirRecursive(dirPath + "/" + file, dest, arrayOfFiles);
+      if (!fse.existsSync(dest + "/" + file)) {
+        fse.mkdirSync(dest + "/" + file);
+      }
+
+      copyDirRecursive(dirPath + "/" + file, dest);
     } else {
-      arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
+      //arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
       console.log("dirPath:", dirPath)
       console.log("__dirname:", __dirname)
+      console.log("dest:", dest);
+      console.log("file:", file);
       console.log("create file:", path.join(dest, "/", file));
       try {
-      fse.copyFileSync(path.join(dirPath, "/", file), path.join(dest, "/", file));
-    }
-    catch (err) {
-      console.log(err);
-    }
+        fse.copyFileSync(path.join(dirPath, "/", file), path.join(dest, "/", file));
+      }
+      catch (err) {
+        console.log(err);
+      }
     }
   })
   //console.log(arrayOfFiles);
-  return arrayOfFiles
+}
+
+const copyR = function (srcDir, dstDir) {
+  var results = [];
+  var list = fse.readdirSync(srcDir);
+  var src, dst;
+  list.forEach(function (file) {
+    src = srcDir + '/' + file;
+    dst = dstDir + '/' + file;
+    //console.log(src);
+    var stat = fse.statSync(src);
+    if (stat && stat.isDirectory()) {
+      try {
+        console.log('creating dir: ' + dst);
+        fse.mkdirSync(dst);
+      } catch (e) {
+        console.log('directory already exists: ' + dst);
+      }
+      results = results.concat(copyR(src, dst));
+    } else {
+      try {
+        console.log('copying file: ' + dst);
+        //fs.createReadStream(src).pipe(fs.createWriteStream(dst));
+        fse.writeFileSync(dst, fse.readFileSync(src));
+      } catch (e) {
+        console.log('could\'t copy file: ' + dst);
+      }
+      results.push(src);
+    }
+  });
+  return results;
 }
 
 ipcMain.on('copy-default-project', (event, arg) => {
@@ -537,10 +573,10 @@ ipcMain.on('copy-default-project', (event, arg) => {
       console.log("success!");
     }
   });*/
-  copyDirRecursive(getPublicPath('default_assets'), arg.destDir);
+  copyR(getPublicPath('default_assets'), arg.destDir);
 
 
-  
+
 })
 
 ipcMain.on('get-text-asset', (event, arg) => {
