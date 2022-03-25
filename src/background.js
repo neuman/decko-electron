@@ -375,7 +375,8 @@ server = http.createServer((req, res) => {
 
 const { ipcMain } = require('electron')
 //import fs from "fs";
-const fse = require('fs-extra')
+const fse = require('fs')
+import copy from 'recursive-copy';
 
 
 ipcMain.on('asynchronous-message', (event, arg) => {
@@ -500,14 +501,45 @@ function generateServer(arg) {
 
 }
 
+const copyDirRecursive = function(dirPath, dest, arrayOfFiles) {
+  var files = fse.readdirSync(dirPath)
+
+  arrayOfFiles = arrayOfFiles || []
+
+  files.forEach(function(file) {
+    if (fse.statSync(dirPath + "/" + file).isDirectory()) {
+      console.log("create dir:", dest + "/" + file);
+      arrayOfFiles = copyDirRecursive(dirPath + "/" + file, dest, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
+      console.log("dirPath:", dirPath)
+      console.log("__dirname:", __dirname)
+      console.log("create file:", path.join(dest, "/", file));
+      try {
+      fse.copyFileSync(path.join(dirPath, "/", file), path.join(dest, "/", file));
+    }
+    catch (err) {
+      console.log(err);
+    }
+    }
+  })
+  //console.log(arrayOfFiles);
+  return arrayOfFiles
+}
+
 ipcMain.on('copy-default-project', (event, arg) => {
+  fse.mkdirSync(arg.destDir);
+  /*
   fse.copy(getPublicPath('default_assets'), arg.destDir, function (err) {
     if (err) {
       console.error(err);      
     } else {
       console.log("success!");
     }
-  });
+  });*/
+  copyDirRecursive(getPublicPath('default_assets'), arg.destDir);
+
+
   
 })
 

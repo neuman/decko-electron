@@ -20,6 +20,12 @@ npm run build
 npm run lint
 ```
 
+### Build Deb
+npm run electron:build -- --linux deb
+
+### Build Exe
+electron:build -- --linux deb --win nsis
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 

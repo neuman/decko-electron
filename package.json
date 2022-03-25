@@ -7,6 +7,7 @@
     "email": "eric@theneuman.com",
     "url": "http://www.theneuman.com"
   },
+  "homepage": "https://github.com/neuman/decko-electron",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -18,7 +19,7 @@
     "start": "electron .",
     "dist": "electron-builder --linux snap"
   },
-  "main": "./src/background.js",
+  "main": "background.js",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.30",
     "@fortawesome/free-solid-svg-icons": "^5.14.0",
@@ -43,6 +44,7 @@
     "mime-types": "^2.1.27",
     "mustache": "^4.0.1",
     "portal-vue": "^2.1.7",
+    "recursive-copy": "^2.0.14",
     "splitpanes": "^2.2.1",
     "vue": "^2.6.11",
     "vue-codemirror": "^4.0.6",
