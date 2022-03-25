@@ -432,6 +432,10 @@ function generateServer(arg) {
         var decodedBody = decodeURIComponent(body);
         var base64Data = decodedBody.split(';base64,').pop();
         //console.log('stripped body:',base64Data);
+        //create output dir if doesn't exist
+        if (!fse.existsSync(path.join(rootDirectoryPath, 'output'))) {
+          fse.mkdirSync(path.join(rootDirectoryPath, 'output'));
+        }
         fse.writeFile(path.join(rootDirectoryPath, 'output', request.url.split("/").pop() + ".png"), base64Data, 'base64', function (err) {
           console.log(err);
         });
@@ -501,44 +505,13 @@ function generateServer(arg) {
 
 }
 
-const copyDirRecursive = function (dirPath, dest, arrayOfFiles) {
-  var files = fse.readdirSync(dirPath)
-
-  arrayOfFiles = arrayOfFiles || []
-
-  files.forEach(function (file) {
-    if (fse.statSync(dirPath + "/" + file).isDirectory()) {
-      console.log("create dir:", dest + "/" + file);
-      if (!fse.existsSync(dest + "/" + file)) {
-        fse.mkdirSync(dest + "/" + file);
-      }
-
-      copyDirRecursive(dirPath + "/" + file, dest);
-    } else {
-      //arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
-      console.log("dirPath:", dirPath)
-      console.log("__dirname:", __dirname)
-      console.log("dest:", dest);
-      console.log("file:", file);
-      console.log("create file:", path.join(dest, "/", file));
-      try {
-        fse.copyFileSync(path.join(dirPath, "/", file), path.join(dest, "/", file));
-      }
-      catch (err) {
-        console.log(err);
-      }
-    }
-  })
-  //console.log(arrayOfFiles);
-}
-
 const copyR = function (srcDir, dstDir) {
   var results = [];
   var list = fse.readdirSync(srcDir);
   var src, dst;
   list.forEach(function (file) {
-    src = srcDir + '/' + file;
-    dst = dstDir + '/' + file;
+    src = path.join(srcDir,file);
+    dst = path.join(dstDir, file);
     //console.log(src);
     var stat = fse.statSync(src);
     if (stat && stat.isDirectory()) {
