@@ -187,7 +187,7 @@ app.on('ready', async () => {
         },
         { type: 'separator' },
         {
-          label: 'Export All Pieces',
+          label: 'Export All Pieces --Coming Soon',
           id: 'export_all_pieces',
           enabled: false,
           click: function () {

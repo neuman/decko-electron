@@ -73,9 +73,10 @@
   	box-shadow:inset;
   background-color: #fff;
   background: radial-gradient(circle, rgba(255,254,240,1) 30%, rgba(230, 191, 151,1) 100%);
-  /* v2.1 : borders effect with SVG : try to play with scale to change them */
-  /*filter: url(#wavy2);*/
-  
+}
+
+.wax{
+color:red;
 }
 
 .fiftytwo-card {
@@ -99,8 +100,9 @@ background-position: 0 0, 0 0, 10px 18px, 10px 18px, 0 0, 10px 18px;
 .fiftytwo-background-3{
 background-color: #25252a;
 opacity: 1;
-background-size: 10px 10px;
-background-image: repeating-linear-gradient(45deg, #d1a85e 0, #d1a85e 1px, #25252a 0, #25252a 50%);
+background-image:  linear-gradient(30deg, #d1a85e 12%, transparent 12.5%, transparent 87%, #d1a85e 87.5%, #d1a85e), linear-gradient(150deg, #d1a85e 12%, transparent 12.5%, transparent 87%, #d1a85e 87.5%, #d1a85e), linear-gradient(30deg, #d1a85e 12%, transparent 12.5%, transparent 87%, #d1a85e 87.5%, #d1a85e), linear-gradient(150deg, #d1a85e 12%, transparent 12.5%, transparent 87%, #d1a85e 87.5%, #d1a85e), linear-gradient(60deg, #d1a85e77 25%, transparent 25.5%, transparent 75%, #d1a85e77 75%, #d1a85e77), linear-gradient(60deg, #d1a85e77 25%, transparent 25.5%, transparent 75%, #d1a85e77 75%, #d1a85e77);
+background-size: 20px 35px;
+background-position: 0 0, 0 0, 10px 18px, 10px 18px, 0 0, 10px 18px;
 }
 
 .filler{
@@ -122,7 +124,6 @@ background-image: repeating-linear-gradient(45deg, #d1a85e 0, #d1a85e 1px, #2525
   font-family: "Buffalo2Grunge";
 }
 
-
 .emphatic {
   font-family: "Bandito";
 }
@@ -136,4 +137,25 @@ background-color:#25252a;
     height: 100px;
     border: 20px solid #25252a;
     margin: 10px;
+}
+
+.instructions{
+color:black;
+}
+
+.instructions h1, .instructions h2, .instructions h3, .instructions h4, .instructions h5{
+  font-family: "Buffalo2Grunge";
+}
+
+.card-columns .card {
+  margin-bottom: 0.75rem;
+}
+
+.twoColumns{
+    -webkit-column-gap: 20px;
+       -moz-column-gap: 20px;
+            column-gap: 20px;
+    -webkit-column-count: 2;
+       -moz-column-count: 2;
+            column-count: 2;
 }

@@ -1,0 +1,22 @@
+{{#block head}}
+<link rel="stylesheet" href="styles/project.css">
+<link rel="stylesheet" href="styles/custom.css">
+<link rel="stylesheet" href="lineawesome/css/line-awesome.css">
+{{/block}}  
+<div card-type="card-back" class="exportable card mb-3 preview parchment" style="width:8.5in">
+  <br/>
+  <h1 class="text-center emphatic wax">♣♠♥♦ Unicycle ♣♠♥♦
+  </h1>
+  <p class="text-center ornate wax">Playing Cards
+  </p>
+  <div class="card-body instructions twoColumns">
+    {{#each Instruction}} 
+    <div>
+      <h2>{{Title}}
+        <hr/>
+      </h2>
+      {{#markdown}}{{ Text }}{{/markdown}}
+    </div>
+    {{/each}}
+  </div>
+</div>

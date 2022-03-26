@@ -88,7 +88,7 @@
           </div>
           <div
             class="h-100"
-            v-else-if="this.selectedDirectoryListItem.category == 'datafile'"
+            v-else-if="this.selectedDirectoryListItem.category == 'deprecated_datafile'"
           >
             <div>
               <b-navbar toggleable="lg" type="dark" sticky="true">
@@ -113,7 +113,7 @@
           <div
             class="h-100"
             v-if="
-              ['stylesheet', 'json', 'text'].includes(
+              ['datafile', 'stylesheet', 'json', 'text'].includes(
                 this.selectedDirectoryListItem.category
               )
             "
@@ -1079,7 +1079,10 @@ export default {
       //this.previewOptions.html = undefined;
       var fileExtension = getFileExtension(match.fileName);
       if (match.category == assetCategories.DATAFILE) {
-        this.openFilePathInSpreadSheet(match.relativeFilePath);
+        //this.openFilePathInSpreadSheet(match.relativeFilePath);
+        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        this.cmOptions.mode = "json";
+        this.openFilePathInEditor(match.relativeFilePath);
       } else if (match.category == assetCategories.STYLESHEET) {
         electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
         this.cmOptions.mode = "css";
