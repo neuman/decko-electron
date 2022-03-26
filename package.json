@@ -30,6 +30,7 @@
     "bootstrap": "^4.5.2",
     "bootstrap-vue": "^2.16.0",
     "codemirror-formatting": "^1.0.0",
+    "convert-excel-to-json": "^1.7.0",
     "core-js": "^3.6.5",
     "create-html-element": "^3.0.0",
     "electron-context-menu": "^2.3.0",

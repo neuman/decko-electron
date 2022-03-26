@@ -1,5 +1,4 @@
 <template>
-
   <div id="app" class="h-100">
     <b-modal ref="import-modal" title="Are You Sure?" @ok="importAllDataDialog">
       <div class="d-block text-center">
@@ -88,7 +87,9 @@
           </div>
           <div
             class="h-100"
-            v-else-if="this.selectedDirectoryListItem.category == 'deprecated_datafile'"
+            v-else-if="
+              this.selectedDirectoryListItem.category == 'deprecated_datafile'
+            "
           >
             <div>
               <b-navbar toggleable="lg" type="dark" sticky="true">
@@ -154,7 +155,7 @@
     </splitpanes>
     <div v-else class="text-center">
       <img v-bind:src="require('./assets/decko-logo.png')" />
-      <p> Use the File menu to create a new project or open an existing one.</p>
+      <p>Use the File menu to create a new project or open an existing one.</p>
     </div>
   </div>
 </template>
@@ -214,6 +215,7 @@ var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
 var ls = require("list-directory-contents");
+const excelToJson = require("convert-excel-to-json");
 
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
@@ -327,7 +329,7 @@ export default {
     });
     electron.ipcRenderer.removeAllListeners("openWebViewDevTools");
     electron.ipcRenderer.on("openWebViewDevTools", (event, arg) => {
-      document.querySelector("webview").openDevTools({ mode: 'undocked' });
+      document.querySelector("webview").openDevTools({ mode: "undocked" });
     });
   },
   updated() {
@@ -350,9 +352,9 @@ export default {
     return {
       rootDirectoryPath: undefined,
       selectedDirectoryListItem: undefined,
-      projectName:undefined,
-      name:undefined,
-      nameState:undefined,
+      projectName: undefined,
+      name: undefined,
+      nameState: undefined,
       openFile: undefined,
       Assets: [],
       Files: {},
@@ -374,46 +376,48 @@ export default {
         lineWrapping: true,
         matchTags: { bothTags: true },
       },
+      datafileContent: undefined,
       previewOptions: {
         doExport: false,
         doMagnetize: false,
         html: undefined,
+        templateFilePath: undefined,
       },
       paneDragging: false,
     };
   },
   methods: {
     checkFormValidity() {
-        const valid = this.$refs.form.checkValidity()
-        this.nameState = valid
-        return valid
-      },
-      resetModal() {
-        this.name = ''
-        this.nameState = null
-      },
-      handleOk(bvModalEvt) {
-        // Prevent modal from closing
-        bvModalEvt.preventDefault()
-        // Trigger submit handler
-        this.newProjectHandleSubmit()
-      },
-      newProjectHandleSubmit() {
-        // Exit when the form isn't valid
-        if (!this.checkFormValidity()) {
-          return
-        }
-        // Push the name to submitted names
-        //this.submittedNames.push(this.name)
-        this.projectName = this.name;
-        this.newProjectDialog();
-        // Hide the modal manually
-        this.$nextTick(() => {
-          this.$bvModal.hide('modal-prevent-closing')
-        })
-      },
+      const valid = this.$refs.form.checkValidity();
+      this.nameState = valid;
+      return valid;
+    },
+    resetModal() {
+      this.name = "";
+      this.nameState = null;
+    },
+    handleOk(bvModalEvt) {
+      // Prevent modal from closing
+      bvModalEvt.preventDefault();
+      // Trigger submit handler
+      this.newProjectHandleSubmit();
+    },
+    newProjectHandleSubmit() {
+      // Exit when the form isn't valid
+      if (!this.checkFormValidity()) {
+        return;
+      }
+      // Push the name to submitted names
+      //this.submittedNames.push(this.name)
+      this.projectName = this.name;
+      this.newProjectDialog();
+      // Hide the modal manually
+      this.$nextTick(() => {
+        this.$bvModal.hide("modal-prevent-closing");
+      });
+    },
     debugAction() {
-      console.log(electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
+      //console.log(electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
       //console.log(this.Assets);
       //this.$refs.editor.codemirror.clearHistory();
       //console.log("this", this);
@@ -428,6 +432,29 @@ export default {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");*/
+      dialog
+        .showOpenDialog({
+          title: "Select your project file.",
+          filters: [{ name: "Decko File", extensions: ["xlsx"] }],
+          properties: ["openFile"],
+        })
+        .then((filenames) => {
+          //console.log(filenames.filePaths[0]);
+          var filePath = filenames.filePaths[0];
+
+          console.log(
+            excelToJson({
+              source: fs.readFileSync(filePath), // fs.readFileSync return a Buffer
+              columnToKey: {
+                "*": "{{columnHeader}}",
+              },
+              header: {
+                // Is the number of rows that will be skipped and will not be present at our result object. Counting from top to bottom
+                rows: 1, // 2, 3, 4, etc.
+              },
+            })
+          );
+        });
     },
     extractBlocks(html, blocks) {
       //regex: {{\s?(#block+ )?head\s?}}(.|[\s\S]){{\s?\/(block)?\s?}}
@@ -486,6 +513,32 @@ export default {
       });
       return output;
     },
+    generatePreviewOptions() {
+      var templateContent = this.loadFile(this.previewOptions.templateFilePath);
+
+      //read datafile
+      this.datafileContent = this.loadDataFileContent(this.datafileFilePath);
+      var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
+      this.previewOptions.html = "";
+      //console.log("templateContent", templateContent);
+      var template = Handlebars.compile(extractedTemplate.html);
+      this.previewOptions.body = template(this.datafileContent);
+      this.previewOptions.head = extractedTemplate.head;
+      this.previewOptions.box = undefined;
+    },
+    loadDataFileContent(filePath) {
+      console.log("loadDataFileContent:", filePath);
+      return excelToJson({
+        source: fs.readFileSync(filePath), // fs.readFileSync return a Buffer
+        columnToKey: {
+          "*": "{{columnHeader}}",
+        },
+        header: {
+          // Is the number of rows that will be skipped and will not be present at our result object. Counting from top to bottom
+          rows: 1, // 2, 3, 4, etc.
+        },
+      });
+    },
     exportOpenFile() {
       this.previewOptions.doExport = true;
       this.assetSelected(
@@ -522,7 +575,7 @@ export default {
         })
         .then((results) => {
           console.log("newProject:", results.filePath);
-          var directoryPath =  path.dirname(results.filePath);
+          var directoryPath = path.dirname(results.filePath);
           //this.projectName = results.filePath;
           this.rootDirectoryPath = results.filePath;
           /*fs.mkdirSync(results.filePath);
@@ -534,12 +587,14 @@ export default {
           fs.mkdirSync(results.filePath+"/templates");
           fs.mkdirSync(results.filePath+"/output");
           this.saveProject();*/
-          electron.ipcRenderer.send("copy-default-project", {destDir:results.filePath});
+          electron.ipcRenderer.send("copy-default-project", {
+            destDir: results.filePath,
+          });
           electron.ipcRenderer.send(
             "project-file-opened",
             this.rootDirectoryPath
           );
-          this.openProjectFile(results.filePath+"/project.dko");
+          this.openProjectFile(results.filePath + "/project.dko");
         });
     },
     openProjectDialog() {
@@ -557,8 +612,8 @@ export default {
         });
     },
     openProjectFile(filePath) {
-      this.datafileFilePath = path.join("project.dkod");
       this.rootDirectoryPath = path.dirname(filePath);
+      this.datafileFilePath = path.join(this.rootDirectoryPath, "project.xlsx");
       //this.Assets = JSON.parse(this.loadFile(filePath, true));
       //if this is a different os, adjust the paths
       if (this.sep != path.sep) {
@@ -608,12 +663,18 @@ export default {
             tempThis.getRootDirectoryRelativePath(pathIn),
             tempThis
           );
-          //tempThis.removeFileByPath(tempThis.getRootDirectoryRelativePath(pathIn), tempThis);
         })
         .on("change", function (pathIn) {
           console.log("File", pathIn, "has been changed");
           tempThis.handleFileChange(pathIn);
           if (tempThis.selectedDirectoryListItem != undefined) {
+            if (
+              [assetCategories.DATAFILE].includes(
+                tempThis.selectedDirectoryListItem.category
+              )
+            ) {
+              this.generatePreviewOptions();
+            }
             if (
               [assetCategories.TEMPLATE, assetCategories.BOX].includes(
                 tempThis.selectedDirectoryListItem.category
@@ -625,24 +686,31 @@ export default {
                 path.basename(path.dirname(pathIn))
               );
               if (path.basename(path.dirname(pathIn)) != "output") {
-                /*tempThis.assetRender(
-                  tempThis.selectedDirectoryListItem.relativeFilePath,
-                  false
-                );*/
-                electron.ipcRenderer.send("piece-preview-opened", tempThis.previewOptions);
+                electron.ipcRenderer.send(
+                  "piece-preview-opened",
+                  tempThis.previewOptions
+                );
               }
-            }else{
-          electron.ipcRenderer.send("piece-preview-opened", tempThis.previewOptions);
+            } else {
+              electron.ipcRenderer.send(
+                "piece-preview-opened",
+                tempThis.previewOptions
+              );
             }
           }
-
         })
         .on("error", function (error) {
           console.error("Error happened", error);
         });
-      
-      electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:false});
-      electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_project", enabled:true});
+
+      electron.ipcRenderer.send("menu-item-toggled", {
+        menuItemID: "save_open_file",
+        enabled: false,
+      });
+      electron.ipcRenderer.send("menu-item-toggled", {
+        menuItemID: "save_project",
+        enabled: true,
+      });
       electron.ipcRenderer.send("project-file-opened", path.dirname(filePath));
     },
     openProjectDirectory(directoryPath) {
@@ -718,11 +786,11 @@ export default {
         .showSaveDialog({
           title: "Create a new HTML or CSS file.",
           properties: ["createDirectory"],
-          defaultPath:this.rootDirectoryPath
+          defaultPath: this.rootDirectoryPath,
         })
         .then((results) => {
           console.log("newFile", results.filePath);
-          fs.writeFileSync(path.join(results.filePath),"");
+          fs.writeFileSync(path.join(results.filePath), "");
           this.openFile(path.join(results.filePath));
         });
     },
@@ -1038,10 +1106,10 @@ export default {
     },
     assetSelected(id) {
       console.log("assetSelected", id);
-       if (this.$refs.editor != undefined) {
-         console.log("clearHistory", this.$refs.editor.codemirror);
-      this.$refs.editor.codemirror.clearHistory();
-       }
+      if (this.$refs.editor != undefined) {
+        console.log("clearHistory", this.$refs.editor.codemirror);
+        this.$refs.editor.codemirror.clearHistory();
+      }
       this.selectedDirectoryListItem = this.Files.index[id];
       console.log(
         "this.selectedDirectoryListItem",
@@ -1070,8 +1138,14 @@ export default {
       }
     },
     assetRender(id, arg) {
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:false});
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:false});
+      electron.ipcRenderer.send("menu-item-toggled", {
+        menuItemID: "save_open_file",
+        enabled: false,
+      });
+      electron.ipcRenderer.send("menu-item-toggled", {
+        menuItemID: "export_piece",
+        enabled: false,
+      });
       var match = this.Files.index[id];
 
       //if it's a dir, expand it
@@ -1080,22 +1154,29 @@ export default {
       var fileExtension = getFileExtension(match.fileName);
       if (match.category == assetCategories.DATAFILE) {
         //this.openFilePathInSpreadSheet(match.relativeFilePath);
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
         this.cmOptions.mode = "json";
         this.openFilePathInEditor(match.relativeFilePath);
       } else if (match.category == assetCategories.STYLESHEET) {
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
-        
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
       } else if (match.category == assetCategories.TEXT) {
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
         this.cmOptions.mode = undefined;
         this.openFilePathInEditor(match.relativeFilePath);
-
       } else if (match.category == assetCategories.IMAGE) {
         this.selectedLocalFile =
           "safe-file-protocol://" +
@@ -1107,8 +1188,14 @@ export default {
         fileExtension == "html" ||
         match.category == assetCategories.BOX
       ) {
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"save_open_file", enabled:true});
-        electron.ipcRenderer.send("menu-item-toggled", {menuItemID:"export_piece", enabled:true});
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "export_piece",
+          enabled: true,
+        });
         this.previewOptions.exportName = match.fileName.split(".").shift();
         if (match.category == assetCategories.TEMPLATE) {
           //console.log("openFilePathInEditor", match.filePath);
@@ -1117,20 +1204,8 @@ export default {
 
           //get template and read it
           //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
-          var templateFilePath = match.relativeFilePath;
-          var templateContent = this.loadFile(templateFilePath);
-
-          //read datafile
-          var datafileContent = JSON.parse(
-            this.loadFile(this.datafileFilePath)
-          );
-          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
-          this.previewOptions.html = "";
-          //console.log("templateContent", templateContent);
-          var template = Handlebars.compile(extractedTemplate.html);
-          this.previewOptions.body = template(datafileContent);
-          this.previewOptions.head = extractedTemplate.head;
-          this.previewOptions.box = undefined;
+          this.previewOptions.templateFilePath = match.relativeFilePath;
+          this.generatePreviewOptions();
         } else if (match.category == assetCategories.BOX) {
           this.cmOptions.mode = { name: "javascript", json: true };
           this.openFilePathInEditor(match.relativeFilePath);
@@ -1159,7 +1234,6 @@ export default {
 */
 
         //console.log("rendered html", this.preview);
-
       } else if (match.category == assetCategories.DIRECTORY) {
         //console.log("CLICKED DIRECTORY");
         match.expanded = !match.expanded;
