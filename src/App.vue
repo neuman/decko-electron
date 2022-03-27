@@ -669,13 +669,6 @@ export default {
           tempThis.handleFileChange(pathIn);
           if (tempThis.selectedDirectoryListItem != undefined) {
             if (
-              [assetCategories.DATAFILE].includes(
-                tempThis.selectedDirectoryListItem.category
-              )
-            ) {
-              this.generatePreviewOptions();
-            }
-            if (
               [assetCategories.TEMPLATE, assetCategories.BOX].includes(
                 tempThis.selectedDirectoryListItem.category
               )
@@ -686,17 +679,12 @@ export default {
                 path.basename(path.dirname(pathIn))
               );
               if (path.basename(path.dirname(pathIn)) != "output") {
-                electron.ipcRenderer.send(
-                  "piece-preview-opened",
-                  tempThis.previewOptions
+                tempThis.assetRender(
+                  tempThis.selectedDirectoryListItem.relativeFilePath,
+                  false
                 );
               }
-            } else {
-              electron.ipcRenderer.send(
-                "piece-preview-opened",
-                tempThis.previewOptions
-              );
-            }
+            } 
           }
         })
         .on("error", function (error) {
