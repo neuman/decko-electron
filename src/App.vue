@@ -267,7 +267,7 @@ export default {
   },
   created: function () {
     if (process.env.NODE_ENV == "development") {
-      //this.openProjectFile("/home/neuman/TEST/project.dko");
+      this.openProjectFile("/home/neuman/Documents/emilydemo/project.dko");
     }
     /*console.log("__dirname", __dirname);
     console.log("process.cwd()", process.cwd());
@@ -513,19 +513,6 @@ export default {
       });
       return output;
     },
-    generatePreviewOptions() {
-      var templateContent = this.loadFile(this.previewOptions.templateFilePath);
-
-      //read datafile
-      this.datafileContent = this.loadDataFileContent(this.datafileFilePath);
-      var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
-      this.previewOptions.html = "";
-      //console.log("templateContent", templateContent);
-      var template = Handlebars.compile(extractedTemplate.html);
-      this.previewOptions.body = template(this.datafileContent);
-      this.previewOptions.head = extractedTemplate.head;
-      this.previewOptions.box = undefined;
-    },
     loadDataFileContent(filePath) {
       console.log("loadDataFileContent:", filePath);
       return excelToJson({
@@ -669,22 +656,22 @@ export default {
           tempThis.handleFileChange(pathIn);
           if (tempThis.selectedDirectoryListItem != undefined) {
             if (
-              [assetCategories.TEMPLATE, assetCategories.BOX].includes(
-                tempThis.selectedDirectoryListItem.category
-              )
+              [
+                assetCategories.TEMPLATE,
+                assetCategories.BOX,
+                assetCategories.DATAFILE,
+                assetCategories.STYLESHEET,
+              ].includes(tempThis.selectedDirectoryListItem.category)
             ) {
               console.log(pathIn, "has been changed");
-              console.log(
-                "path.dirname(pathIn)",
-                path.basename(path.dirname(pathIn))
-              );
               if (path.basename(path.dirname(pathIn)) != "output") {
+                //if the changed item is not in the output file rerender the selected asset
                 tempThis.assetRender(
                   tempThis.selectedDirectoryListItem.relativeFilePath,
                   false
                 );
               }
-            } 
+            }
           }
         })
         .on("error", function (error) {
@@ -869,6 +856,24 @@ export default {
       this.DataSheets.push(output);
 
       return output;
+    },
+    renderLastTemplatePreview(match){
+          var templateContent = this.loadFile(
+            this.previewOptions.templateFilePath
+          );
+
+          //read datafile
+          this.datafileContent = this.loadDataFileContent(
+            this.datafileFilePath
+          );
+          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
+          this.previewOptions.html = "";
+          //console.log("templateContent", templateContent);
+          var template = Handlebars.compile(extractedTemplate.html);
+          this.previewOptions.body = template(this.datafileContent);
+          this.previewOptions.head = extractedTemplate.head;
+          this.previewOptions.box = undefined;
+          electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
     },
     openFilePathInEditor(filePath) {
       console.log(
@@ -1155,6 +1160,8 @@ export default {
         });
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
+
+        this.renderLastTemplatePreview();
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
@@ -1190,22 +1197,21 @@ export default {
           this.cmOptions.mode = "htmlmixed";
           this.openFilePathInEditor(match.relativeFilePath);
 
-          //get template and read it
-          //var templateFilePath = this.Assets.filter(({ parentId, category }) => parentId == id && category == assetCategories.template);
+          //generate preview
           this.previewOptions.templateFilePath = match.relativeFilePath;
-          this.generatePreviewOptions();
+          this.renderLastTemplatePreview();
         } else if (match.category == assetCategories.BOX) {
           this.cmOptions.mode = { name: "javascript", json: true };
           this.openFilePathInEditor(match.relativeFilePath);
 
-          //get template and read it
           this.previewOptions.body = undefined;
           this.previewOptions.box = JSON.parse(
             this.loadFile(match.relativeFilePath)
           );
+          electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
         }
 
-        electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
+        
 
         /*
           setTimeout(function () {
