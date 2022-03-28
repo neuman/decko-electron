@@ -1,0 +1,9 @@
+{
+    "front":"/output/boxart-1.png",
+    "back":"/output/boxart-1.png",
+    "top":"/output/boxart-2.png",
+    "bottom":"/output/boxart-2.png",
+    "left":"/output/boxart-3.png",
+    "right":"/output/boxart-3.png",
+    "camera":{"x": 0.8907969774205287, "y": 0.5955038252281064, "z": 0.6286867337424427}
+}

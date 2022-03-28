@@ -537,7 +537,7 @@ const copyR = function (srcDir, dstDir) {
 
 ipcMain.on('copy-default-project', (event, arg) => {
   fse.mkdirSync(arg.destDir);
-  copyR(getPublicPath('default_assets'), arg.destDir);
+  copyR(getPublicPath(arg.srcDir), arg.destDir);
 })
 
 ipcMain.on('copy-dir', (event, arg) => {

@@ -58,7 +58,7 @@ export function buildWebPage(css, scripts, body) {
     IMAGE: ["jpg","jpeg","png","svg"],
     JSON: ["json", "dko", "js"],
     BOX: ["dkob"],
-    TEXT:["txt"],
+    TEXT:["txt","md"],
   };
 
   export const assetFilenames = {

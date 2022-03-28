@@ -356,6 +356,7 @@ export default {
       },
       paneDragging: false,
       contextedAsset: undefined,
+      newProjectSrcDir: undefined,
     };
   },
   methods: {
@@ -532,8 +533,9 @@ export default {
                 )
                 .isDirectory()
             ) {
-                            fs.rmdir(
-                path.join(this.rootDirectoryPath, this.contextedAsset),{ recursive: true, force: true },
+              fs.rmdir(
+                path.join(this.rootDirectoryPath, this.contextedAsset),
+                { recursive: true, force: true },
                 (err) => {
                   if (err) console.log(err);
                 }
@@ -650,6 +652,26 @@ export default {
       }
     },
     newProjectDialog() {
+      var newProjectSrcDir;
+      dialog
+        .showMessageBox(null, {
+          message: "What kind of new project would you like to create?",
+          buttons: ["Empty Project", "Classic Card Deck"],
+          defaultId: 0, // bound to buttons array
+          cancelId: 1, // bound to buttons array
+        })
+        .then((result) => {
+          if (result.response === 0) {
+            newProjectSrcDir = "blank_assets";
+          } else if (result.response === 1) {
+            newProjectSrcDir = "sample_assets";
+          }
+          this.newProjectSaveDialog(newProjectSrcDir);
+        });
+
+
+    },
+    newProjectSaveDialog(newProjectSrcDir){
       dialog
         .showSaveDialog({
           title: "Select which directory to create your new project in.",
@@ -661,6 +683,7 @@ export default {
           this.rootDirectoryPath = results.filePath;
           electron.ipcRenderer.send("copy-default-project", {
             destDir: results.filePath,
+            srcDir: newProjectSrcDir,
           });
           electron.ipcRenderer.send(
             "project-file-opened",
