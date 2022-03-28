@@ -162,6 +162,7 @@
 </template>
 1
 <script>
+const prompt = require("electron-prompt");
 const Handlebars = require("handlebars");
 var $ = require("jquery");
 var markdown = require("helper-markdown");
@@ -412,30 +413,144 @@ export default {
       );
     },
     duplicateContextedAsset() {
-      var newFilepath = getFileTitle(this.contextedAsset)+ " - Copy."+getFileExtension(this.contextedAsset);
-      fs.copyFile(path.join(this.rootDirectoryPath, this.contextedAsset),
-        path.join(this.rootDirectoryPath, newFilepath), (err) => {
-        if (err) {
-          console.log("Error Found:", err);
-        }
-      });
+      var newFilePath =
+        getFileTitle(this.contextedAsset) +
+        " - Copy." +
+        getFileExtension(this.contextedAsset);
+      dialog
+        .showSaveDialog({
+          title: "Select where to duplicate " + this.contextedAsset + " to.",
+          defaultPath: path.join(this.rootDirectoryPath, newFilePath),
+          buttonLabel: "Duplicate",
+          showOverwriteConfirmation: true,
+          properties: ["createDirectory"],
+        })
+        .then((results) => {
+          if (
+            fs
+              .lstatSync(path.join(this.rootDirectoryPath, this.contextedAsset))
+              .isDirectory()
+          ) {
+            electron.ipcRenderer.send("copy-dir", {
+              srcDir: path.join(this.rootDirectoryPath, this.contextedAsset),
+              destDir: results.filePath,
+              deleteOriginal: true,
+            });
+          } else {
+            fs.copyFile(
+              path.join(this.rootDirectoryPath, this.contextedAsset),
+              results.filePath,
+              (err) => {
+                if (err) {
+                  console.log("Error Found:", err);
+                } else {
+                  fs.rmSync(
+                    path.join(this.rootDirectoryPath, this.contextedAsset),
+                    { recursive: true, force: true }
+                  );
+                }
+              }
+            );
+          }
+        });
+    },
+    renameContextedAsset() {
+      var newFilePath = this.contextedAsset;
+      if (
+        fs
+          .lstatSync(path.join(this.rootDirectoryPath, this.contextedAsset))
+          .isDirectory()
+      ) {
+        var newParentDirPath = path
+          .join(this.rootDirectoryPath, newFilePath)
+          .split(path.sep);
+        console.log("newParentDirPath:", newParentDirPath);
+        newParentDirPath.pop();
+        console.log("newParentDirPath:", newParentDirPath);
+        newParentDirPath = newParentDirPath.join(path.sep);
+        console.log("newParentDirPath:", newParentDirPath);
+        newFilePath = path.join(path.join(newParentDirPath), newFilePath);
+        newFilePath = newParentDirPath;
+        console.log("newFilePath:", newFilePath);
+      } else {
+        newFilePath = path.join(this.rootDirectoryPath, newFilePath);
+      }
+      dialog
+        .showSaveDialog({
+          title: "Select what to rename " + this.contextedAsset + " to.",
+          defaultPath: newFilePath,
+          buttonLabel: "Rename",
+          showOverwriteConfirmation: true,
+          properties: ["createDirectory"],
+        })
+        .then((results) => {
+          if (
+            fs
+              .lstatSync(path.join(this.rootDirectoryPath, this.contextedAsset))
+              .isDirectory()
+          ) {
+            electron.ipcRenderer.send("copy-dir", {
+              srcDir: path.join(this.rootDirectoryPath, this.contextedAsset),
+              destDir: results.filePath,
+              deleteOriginal: true,
+            });
+          } else {
+            fs.copyFile(
+              path.join(this.rootDirectoryPath, this.contextedAsset),
+              results.filePath,
+              (err) => {
+                if (err) {
+                  console.log("Error Found:", err);
+                } else {
+                  fs.unlinkSync(
+                    path.join(this.rootDirectoryPath, this.contextedAsset),
+                    () => {
+                      console.log("File Deleted!");
+                    }
+                  );
+                }
+              }
+            );
+          }
+        });
     },
     showContextDeleteDialog() {
-      dialog.showMessageBox(
-        null,
-        {
-          type: "question",
-          buttons: ["Cancel", "Yes, please", "No, thanks"],
-          defaultId: 2,
-          title: "Question",
-          message: "Do you want to delete this file?",
-          detail: this.contextedAsset,
-        },
-        (response, checkboxChecked) => {
-          console.log(response);
-          console.log(checkboxChecked);
-        }
-      );
+      dialog
+        .showMessageBox(null, {
+          message: "Are you sure you want to delete " + this.contextedAsset,
+          buttons: ["Yes", "Cancel"],
+          defaultId: 0, // bound to buttons array
+          cancelId: 1, // bound to buttons array
+        })
+        .then((result) => {
+          if (result.response === 0) {
+            // bound to buttons array
+            if (
+              fs
+                .lstatSync(
+                  path.join(this.rootDirectoryPath, this.contextedAsset)
+                )
+                .isDirectory()
+            ) {
+                            fs.rmdir(
+                path.join(this.rootDirectoryPath, this.contextedAsset),{ recursive: true, force: true },
+                (err) => {
+                  if (err) console.log(err);
+                }
+              );
+            } else {
+              fs.unlink(
+                path.join(this.rootDirectoryPath, this.contextedAsset),
+                (err) => {
+                  if (err) console.log(err);
+                }
+              );
+            }
+          } else if (result.response === 1) {
+            // bound to buttons array
+            console.log("Cancel button clicked.");
+          }
+        });
     },
     extractBlocks(html, blocks) {
       //regex: {{\s?(#block+ )?head\s?}}(.|[\s\S]){{\s?\/(block)?\s?}}
@@ -535,7 +650,6 @@ export default {
       }
     },
     newProjectDialog() {
-      //
       dialog
         .showSaveDialog({
           title: "Select which directory to create your new project in.",
@@ -544,17 +658,7 @@ export default {
         .then((results) => {
           console.log("newProject:", results.filePath);
           var directoryPath = path.dirname(results.filePath);
-          //this.projectName = results.filePath;
           this.rootDirectoryPath = results.filePath;
-          /*fs.mkdirSync(results.filePath);
-          fs.writeFileSync(results.filePath+"/project.dkod", JSON.stringify({}));
-          fs.mkdirSync(results.filePath+"/styles");
-          fs.writeFileSync(results.filePath+"/styles/project.css", electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
-          fs.mkdirSync(results.filePath+"/images");
-          fs.mkdirSync(results.filePath+"/fonts");
-          fs.mkdirSync(results.filePath+"/templates");
-          fs.mkdirSync(results.filePath+"/output");
-          this.saveProject();*/
           electron.ipcRenderer.send("copy-default-project", {
             destDir: results.filePath,
           });
@@ -1095,6 +1199,10 @@ export default {
         {
           label: "Open Containing Folder",
           click: this.showContextedAssetInFolder,
+        },
+        {
+          label: "Rename",
+          click: this.renameContextedAsset,
         },
         {
           label: "Duplicate",

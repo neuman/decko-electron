@@ -541,6 +541,17 @@ ipcMain.on('copy-default-project', (event, arg) => {
   copyR(getPublicPath('default_assets'), arg.destDir);
 })
 
+ipcMain.on('copy-dir', (event, arg) => {
+  fse.mkdirSync(arg.destDir);
+  copyR(arg.srcDir, arg.destDir);
+  if(arg.deleteOriginal){
+    fse.rmdir(arg.srcDir,{ recursive: true, force: true }, () => {
+      console.log("Folder Deleted!");
+    });
+  }
+
+})
+
 ipcMain.on('get-text-asset', (event, arg) => {
   //currentArg = arg;
   event.returnValue = loadFile(getPublicPath(path.join('default_assets', arg.filePath)));
