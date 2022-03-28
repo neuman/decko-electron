@@ -1,8 +1,9 @@
 <template>
   <div>
-    <div v-on:click="isClicked">
+    <div v-on:click="isClicked" v-on:contextmenu="isRightClicked">
       <div
         class="text-nowrap assetListItem defaultCursor unselectable"
+        v-bind:id="getRelativeFilePath"
         v-bind:style="{ 'padding-left': myIndentString + 'px' }"
         :for="label"
       >
@@ -19,6 +20,7 @@
           :isDirectory="item.isDirectory"
           :children="item.children"
           @asset-selected="childClicked"
+          @asset-contexted="childRightClicked"
         ></nested-asset-list-item>
       </div>
     </div>
@@ -103,6 +105,9 @@ export default {
       }
       return icColor;
     },
+    getRelativeFilePath: function () {
+      return this.relativeFilePath;
+    },
   },
   created: function () {
     //this.assignColorIcon();
@@ -118,6 +123,14 @@ export default {
     },
     childClicked(relativeFilePath) {
       this.$emit("asset-selected", relativeFilePath);
+    },
+    childRightClicked(relativeFilePath) {
+      this.$emit("asset-contexted", relativeFilePath);
+    },
+    isRightClicked(e) {
+      console.log("isRightClicked");
+        this.$emit("asset-contexted", this.relativeFilePath);
+      e.preventDefault();
     },
   },
 };

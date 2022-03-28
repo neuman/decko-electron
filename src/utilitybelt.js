@@ -124,3 +124,8 @@ export function buildWebPage(css, scripts, body) {
   export function getFileExtension(filePath) {
     return filePath.split(".").pop();
   }
+
+  export function getFileTitle(filePath) {
+    var extension = getFileExtension(filePath);
+    return filePath.slice(0, -1*(extension.length+1));
+  }

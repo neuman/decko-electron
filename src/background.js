@@ -538,18 +538,7 @@ const copyR = function (srcDir, dstDir) {
 
 ipcMain.on('copy-default-project', (event, arg) => {
   fse.mkdirSync(arg.destDir);
-  /*
-  fse.copy(getPublicPath('default_assets'), arg.destDir, function (err) {
-    if (err) {
-      console.error(err);      
-    } else {
-      console.log("success!");
-    }
-  });*/
   copyR(getPublicPath('default_assets'), arg.destDir);
-
-
-
 })
 
 ipcMain.on('get-text-asset', (event, arg) => {

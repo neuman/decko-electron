@@ -43,6 +43,7 @@
           :category="Files.category"
           :isDirectory="Files.isDirectory"
           @asset-selected="assetSelected"
+          @asset-contexted="assetContexted"
         ></nested-asset-list-item>
       </pane>
       <pane class="bg-dark">
@@ -220,29 +221,25 @@ const excelToJson = require("convert-excel-to-json");
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
 //
-let rightClickPosition;
-//
-const contextMenu = new Menu();
-const menuItem = new MenuItem({
-  label: "Inspect Element",
-  click: () => {
-    let factor = webFrame.getZoomFactor();
-    let x = Math.round(rightClickPosition.x * factor);
-    let y = Math.round(rightClickPosition.y * factor);
-    getCurrentWebContents().inspectElement(x, y);
-  },
-});
-console.log("Menu.getApplicationMenu()", Menu.getApplicationMenu());
-//
-/*window.addEventListener(
-  "contextmenu",
-  (event) => {
-    event.preventDefault();
-    rightClickPosition = { x: event.x, y: event.y };
-    contextMenu.popup();
-  },
-  false
-);*/
+const markdownContextMenu = Menu.buildFromTemplate([
+  { label: "Open File", click() {} },
+  { type: "separator" },
+  { label: "Cut", role: "cut" },
+  { label: "Copy", role: "copy" },
+  { label: "Paste", role: "paste" },
+  { label: "Select All", role: "selectall" },
+]);
+
+/*window.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+  //console.log(event);
+  if (event.target.id == "/box.dkob") {
+    
+    assetListContextMenu.popup();
+  } else {
+    markdownContextMenu.popup();
+  }
+});*/
 import {
   assetCategories,
   assetFilenames,
@@ -250,6 +247,7 @@ import {
   assetCategoryExtensions,
   getAssetCategory,
   getFileExtension,
+  getFileTitle,
 } from "./utilitybelt.js";
 import { dirname } from "path";
 //import func from "../../testvue/hello-world/vue-temp/vue-editor-bridge";
@@ -269,19 +267,6 @@ export default {
     if (process.env.NODE_ENV == "development") {
       this.openProjectFile("/home/neuman/Documents/emilydemo/project.dko");
     }
-    /*console.log("__dirname", __dirname);
-    console.log("process.cwd()", process.cwd());
-    var asarPath = this.getPublicPath("test.txt");
-    fs.readdir(__dirname, function (err, items) {
-      console.log(items);
-
-      for (var i = 0; i < items.length; i++) {
-        console.log(items[i]);
-      }
-    });
-
-    console.log("asarPath", asarPath);
-    console.log(this.loadFile(asarPath, true));*/
     electron.ipcRenderer.removeAllListeners("openProject");
     electron.ipcRenderer.on("openProject", (event, arg) => {
       this.openProjectDialog();
@@ -332,22 +317,7 @@ export default {
       document.querySelector("webview").openDevTools({ mode: "undocked" });
     });
   },
-  updated() {
-    //only fire when iframe is present
-    /*if(this.$refs.iframeContent != undefined){
-        console.log("this.$refs.iframeContent", this.$refs.iframeContent)
-        this.$refs.iframeContent.$refs.iframeContent.addEventListener(
-          "contextmenu",
-          (event) => {
-            event.preventDefault();
-            rightClickPosition = { x: event.x, y: event.y };
-            console.log("CAPTURED")
-            contextMenu.popup();
-          },
-          false
-        );
-    }*/
-  },
+  updated() {},
   data() {
     return {
       rootDirectoryPath: undefined,
@@ -384,6 +354,7 @@ export default {
         templateFilePath: undefined,
       },
       paneDragging: false,
+      contextedAsset: undefined,
     };
   },
   methods: {
@@ -417,6 +388,8 @@ export default {
       });
     },
     debugAction() {
+      console.log("DEBUG");
+
       //console.log(electron.ipcRenderer.sendSync("get-text-asset", {filePath:"project.css"}));
       //console.log(this.Assets);
       //this.$refs.editor.codemirror.clearHistory();
@@ -432,29 +405,37 @@ export default {
         console.log(arg); // prints "pong"
       });
       electron.ipcRenderer.send("asynchronous-message", "ping");*/
-      dialog
-        .showOpenDialog({
-          title: "Select your project file.",
-          filters: [{ name: "Decko File", extensions: ["xlsx"] }],
-          properties: ["openFile"],
-        })
-        .then((filenames) => {
-          //console.log(filenames.filePaths[0]);
-          var filePath = filenames.filePaths[0];
-
-          console.log(
-            excelToJson({
-              source: fs.readFileSync(filePath), // fs.readFileSync return a Buffer
-              columnToKey: {
-                "*": "{{columnHeader}}",
-              },
-              header: {
-                // Is the number of rows that will be skipped and will not be present at our result object. Counting from top to bottom
-                rows: 1, // 2, 3, 4, etc.
-              },
-            })
-          );
-        });
+    },
+    showContextedAssetInFolder() {
+      electron.shell.showItemInFolder(
+        path.join(this.rootDirectoryPath, this.contextedAsset)
+      );
+    },
+    duplicateContextedAsset() {
+      var newFilepath = getFileTitle(this.contextedAsset)+ " - Copy."+getFileExtension(this.contextedAsset);
+      fs.copyFile(path.join(this.rootDirectoryPath, this.contextedAsset),
+        path.join(this.rootDirectoryPath, newFilepath), (err) => {
+        if (err) {
+          console.log("Error Found:", err);
+        }
+      });
+    },
+    showContextDeleteDialog() {
+      dialog.showMessageBox(
+        null,
+        {
+          type: "question",
+          buttons: ["Cancel", "Yes, please", "No, thanks"],
+          defaultId: 2,
+          title: "Question",
+          message: "Do you want to delete this file?",
+          detail: this.contextedAsset,
+        },
+        (response, checkboxChecked) => {
+          console.log(response);
+          console.log(checkboxChecked);
+        }
+      );
     },
     extractBlocks(html, blocks) {
       //regex: {{\s?(#block+ )?head\s?}}(.|[\s\S]){{\s?\/(block)?\s?}}
@@ -857,23 +838,19 @@ export default {
 
       return output;
     },
-    renderLastTemplatePreview(match){
-          var templateContent = this.loadFile(
-            this.previewOptions.templateFilePath
-          );
+    renderLastTemplatePreview(match) {
+      var templateContent = this.loadFile(this.previewOptions.templateFilePath);
 
-          //read datafile
-          this.datafileContent = this.loadDataFileContent(
-            this.datafileFilePath
-          );
-          var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
-          this.previewOptions.html = "";
-          //console.log("templateContent", templateContent);
-          var template = Handlebars.compile(extractedTemplate.html);
-          this.previewOptions.body = template(this.datafileContent);
-          this.previewOptions.head = extractedTemplate.head;
-          this.previewOptions.box = undefined;
-          electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
+      //read datafile
+      this.datafileContent = this.loadDataFileContent(this.datafileFilePath);
+      var extractedTemplate = this.extractBlocks(templateContent, ["head"]);
+      this.previewOptions.html = "";
+      //console.log("templateContent", templateContent);
+      var template = Handlebars.compile(extractedTemplate.html);
+      this.previewOptions.body = template(this.datafileContent);
+      this.previewOptions.head = extractedTemplate.head;
+      this.previewOptions.box = undefined;
+      electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
     },
     openFilePathInEditor(filePath) {
       console.log(
@@ -1111,6 +1088,25 @@ export default {
       this.updateMenu();
       this.assetRender(id, false);
     },
+    assetContexted(id) {
+      console.log("assetContexted", id);
+      this.contextedAsset = id;
+      var assetListContextMenu = Menu.buildFromTemplate([
+        {
+          label: "Open Containing Folder",
+          click: this.showContextedAssetInFolder,
+        },
+        {
+          label: "Duplicate",
+          click: this.duplicateContextedAsset,
+        },
+        {
+          label: "Delete",
+          click: this.showContextDeleteDialog,
+        },
+      ]);
+      assetListContextMenu.popup();
+    },
     getAssetById(id) {
       var match = this.Assets.find((obj) => {
         return obj.id === id;
@@ -1208,24 +1204,11 @@ export default {
           this.previewOptions.box = JSON.parse(
             this.loadFile(match.relativeFilePath)
           );
-          electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
+          electron.ipcRenderer.send(
+            "piece-preview-opened",
+            this.previewOptions
+          );
         }
-
-        
-
-        /*
-          setTimeout(function () {
-                        // In embedder page.
-            const webview = document.querySelector("webview");
-            console.log("webview", webview);
-            webview.addEventListener("ipc-message", (event) => {
-              var webviewMessage = console.log("JSON.parse(event.chanel)", JSON.parse(event.channel));
-              //contextMenu.popup();
-              // Prints "pong"
-            });
-            webview.send("pinga");
-          }, 25);
-*/
 
         //console.log("rendered html", this.preview);
       } else if (match.category == assetCategories.DIRECTORY) {

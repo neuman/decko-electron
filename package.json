@@ -1,6 +1,6 @@
 {
   "name": "decko",
-  "version": "0.1.0",
+  "version": "0.11.0",
   "private": true,
   "author": {
     "name": "Eric Neuman",
@@ -8,6 +8,16 @@
     "url": "http://www.theneuman.com"
   },
   "homepage": "https://github.com/neuman/decko-electron",
+  "build": {
+    "fileAssociations": [
+      {
+        "ext": ".dko",
+        "name": "Decko File",
+        "role": "Editor",
+        "perMachine": true
+      }
+    ]
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
