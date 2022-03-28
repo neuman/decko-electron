@@ -187,23 +187,6 @@ app.on('ready', async () => {
         },
         { type: 'separator' },
         {
-          label: 'Export All Pieces --Coming Soon',
-          id: 'export_all_pieces',
-          enabled: false,
-          click: function () {
-            win.webContents.send('importAllData', '');
-          }
-        },
-        {
-          label: 'Export Piece ',
-          id: 'export_piece',
-          click: function () {
-            //generateServer(currentArg, true);
-            win.webContents.send('exportOpenFile', '');
-          }
-        },
-        { type: 'separator' },
-        {
           label: 'Debug Action',
           click: function () {
             win.webContents.send('debugAction', '');
@@ -214,7 +197,8 @@ app.on('ready', async () => {
     },
     // { role: 'editMenu' }
     {
-      label: 'Edit',
+      id: 'editor',
+      label: 'Editor',
       submenu: [
         { role: 'undo' },
         { role: 'redo' },
@@ -239,6 +223,13 @@ app.on('ready', async () => {
           { type: 'separator' },
           { role: 'selectAll' }
         ]),
+        { type: 'separator' },
+        {
+          label: 'Toggle Wrapping',
+          click: function () {
+            win.webContents.send('toggleLineWrapping', '');
+          }
+        },
         {
           label: 'Format Selection',
           id: 'format_document',
@@ -249,20 +240,25 @@ app.on('ready', async () => {
         }
       ]
     },
+    
     // { role: 'viewMenu' }
     {
-      label: 'View',
+      id: 'preview',
+      label: 'Preview',
       submenu: [
+        {
+          label: 'Export Piece ',
+          id: 'export_piece',
+          click: function () {
+            //generateServer(currentArg, true);
+            win.webContents.send('exportOpenFile', '');
+          }
+        },
+        { type: 'separator' },
         {
           label: 'Magnetize',
           click: function () {
             win.webContents.send('magnetizeOpenFile', '');
-          }
-        },
-        {
-          label: 'Toggle Wrapping',
-          click: function () {
-            win.webContents.send('toggleLineWrapping', '');
           }
         },
         { type: 'separator' },
@@ -270,11 +266,20 @@ app.on('ready', async () => {
         { role: 'zoomin' },
         { role: 'zoomout' },
         { type: 'separator' },
-        { role: 'togglefullscreen' }
+        { role: 'togglefullscreen' },
+        { type: 'separator' },
+        {
+          label: 'Debug Preview',
+          accelerator: 'CmdOrCtrl+D',
+          click: function () {
+            win.webContents.send('openWebViewDevTools', '');
+          }
+        },
       ]
     },
     // { role: 'windowMenu' }
     {
+      id: 'window',
       label: 'Window',
       submenu: [
         { role: 'minimize' },
@@ -291,16 +296,10 @@ app.on('ready', async () => {
         { role: 'reload' },
         { role: 'forcereload' },
         { role: 'toggledevtools' },
-        {
-          label: 'Open Webview Devtools',
-          accelerator: 'CmdOrCtrl+D',
-          click: function () {
-            win.webContents.send('openWebViewDevTools', '');
-          }
-        },
       ]
     },
     {
+      id: 'help',
       role: 'help',
       submenu: [
         {

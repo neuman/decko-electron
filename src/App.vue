@@ -434,7 +434,7 @@ export default {
             electron.ipcRenderer.send("copy-dir", {
               srcDir: path.join(this.rootDirectoryPath, this.contextedAsset),
               destDir: results.filePath,
-              deleteOriginal: true,
+              deleteOriginal: false,
             });
           } else {
             fs.copyFile(
@@ -1227,7 +1227,7 @@ export default {
         (assetCategories.TEMPLATE || assetCategories.BOX)
       ) {
         Menu.getApplicationMenu()
-          .getMenuItemById("file")
+          .getMenuItemById("preview")
           .submenu.getMenuItemById("export_piece").enabled = true;
       } else {
         Menu.getApplicationMenu().getMenuItemById("file");
