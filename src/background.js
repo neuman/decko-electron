@@ -180,9 +180,8 @@ app.on('ready', async () => {
         { type: 'separator' },
         {
           label: 'Generate Default Templates',
-          accelerator: 'CmdOrCtrl+I',
           click: function () {
-            win.webContents.send('importAllData', '');
+            win.webContents.send('autoGenerateTemplates', '');
           }
         },
         { type: 'separator' },
