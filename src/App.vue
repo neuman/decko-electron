@@ -199,16 +199,11 @@ const markdownContextMenu = Menu.buildFromTemplate([
   { label: "Select All", role: "selectall" },
 ]);
 
-/*window.addEventListener("contextmenu", (event) => {
+window.addEventListener("contextmenu", (event) => {
   event.preventDefault();
   //console.log(event);
-  if (event.target.id == "/box.dkob") {
-    
-    assetListContextMenu.popup();
-  } else {
     markdownContextMenu.popup();
-  }
-});*/
+});
 import {
   assetCategories,
   assetFilenames,
@@ -269,6 +264,10 @@ export default {
     electron.ipcRenderer.on("magnetizeOpenFile", (event, arg) => {
       this.magnetizeOpenFile();
     });
+    electron.ipcRenderer.removeAllListeners("printizeOpenFile");
+    electron.ipcRenderer.on("printizeOpenFile", (event, arg) => {
+      this.printizeOpenFile();
+    });
     electron.ipcRenderer.removeAllListeners("toggleLineWrapping");
     electron.ipcRenderer.on("toggleLineWrapping", (event, arg) => {
       this.toggleLineWrapping();
@@ -284,6 +283,12 @@ export default {
     electron.ipcRenderer.removeAllListeners("openWebViewDevTools");
     electron.ipcRenderer.on("openWebViewDevTools", (event, arg) => {
       document.querySelector("webview").openDevTools({ mode: "undocked" });
+    });
+    electron.ipcRenderer.removeAllListeners("openWebViewPrintDialog");
+    electron.ipcRenderer.on("openWebViewPrintDialog", (event, arg) => {
+      console.log("openWebViewPrintDialog");
+      document.querySelector("webview").executeJavaScript("window.print(); ");
+      console.log("getWebContents", document.querySelector("webview"));
     });
   },
   updated() {},
@@ -319,6 +324,7 @@ export default {
       previewOptions: {
         doExport: false,
         doMagnetize: false,
+        doPrintize: false,
         html: undefined,
         templateFilePath: undefined,
       },
@@ -603,6 +609,14 @@ export default {
     magnetizeOpenFile() {
       this.previewOptions.doExport = false;
       this.previewOptions.doMagnetize = !this.previewOptions.doMagnetize;
+      this.assetSelected(
+        this.selectedDirectoryListItem.relativeFilePath,
+        this.previewOptions
+      );
+    },
+    printizeOpenFile() {
+      this.previewOptions.doExport = false;
+      this.previewOptions.doPrintize = !this.previewOptions.doPrintize;
       this.assetSelected(
         this.selectedDirectoryListItem.relativeFilePath,
         this.previewOptions
@@ -1067,7 +1081,7 @@ export default {
             createHtmlElement({
               name: "div",
               attributes: {
-                class: "card",
+                class: "card exportable preview",
                 style:"width:2.5in; height:3.5in;",
               },
 

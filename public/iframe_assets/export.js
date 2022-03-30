@@ -43,6 +43,11 @@ magnetize = function () {
   });
 }
 
+printize = function () {
+  $('*').toggleClass('everything-bw');
+  $('.printnplay-ignore').removeClass('eveything-bw');
+}
+
 export_all = function () {
   //$('body').prep
   var elements = $('body').children().not('.export_ignore');
@@ -209,6 +214,10 @@ $(document).ready(function () {
     if (arg.doMagnetize) {
       console.log("doMagnetize == true");
       magnetize();
+    }
+    if (arg.doPrintize) {
+      console.log("doPrintize == true");
+      printize();
     }
     if (arg.doExport) {
       export_all();

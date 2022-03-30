@@ -184,13 +184,6 @@ app.on('ready', async () => {
             win.webContents.send('autoGenerateTemplates', '');
           }
         },
-        { type: 'separator' },
-        {
-          label: 'Debug Action',
-          click: function () {
-            win.webContents.send('debugAction', '');
-          }
-        },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
@@ -255,9 +248,15 @@ app.on('ready', async () => {
         },
         { type: 'separator' },
         {
-          label: 'Magnetize',
+          label: "Toggle Print'n'Play Mode",
           click: function () {
-            win.webContents.send('magnetizeOpenFile', '');
+            win.webContents.send('printizeOpenFile', '');
+          }
+        },
+        {
+          label: 'Print',
+          click: function () {
+            win.webContents.send('openWebViewPrintDialog', '');
           }
         },
         { type: 'separator' },
@@ -268,7 +267,7 @@ app.on('ready', async () => {
         { role: 'togglefullscreen' },
         { type: 'separator' },
         {
-          label: 'Debug Preview',
+          label: 'Open Preview DevTools',
           accelerator: 'CmdOrCtrl+D',
           click: function () {
             win.webContents.send('openWebViewDevTools', '');
@@ -276,27 +275,7 @@ app.on('ready', async () => {
         },
       ]
     },
-    // { role: 'windowMenu' }
-    {
-      id: 'window',
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        ...(isMac ? [
-          { type: 'separator' },
-          { role: 'front' },
-          { type: 'separator' },
-          { role: 'window' }
-        ] : [
-          { role: 'close' }
-        ]),
-        { type: 'separator' },
-        { role: 'reload' },
-        { role: 'forcereload' },
-        { role: 'toggledevtools' },
-      ]
-    },
+
     {
       id: 'help',
       role: 'help',
@@ -307,7 +286,26 @@ app.on('ready', async () => {
             const { shell } = require('electron')
             await shell.openExternal('https://electronjs.org')
           }
-        }
+        },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'forcereload' },
+        { type: 'separator' },
+        {
+          label: 'Toggle Tabletopia Magnetic Mode',
+          click: function () {
+            win.webContents.send('magnetizeOpenFile', '');
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Debug Action',
+          click: function () {
+            win.webContents.send('debugAction', '');
+          }
+        },
+        { role: 'toggledevtools' },
+        
       ]
     }
   ]
