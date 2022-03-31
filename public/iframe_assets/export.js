@@ -44,8 +44,9 @@ magnetize = function () {
 }
 
 printize = function () {
-  $('*').toggleClass('everything-bw');
-  $('.printnplay-ignore').removeClass('eveything-bw');
+  $('*').toggleClass('printnplay');
+  $('.printnplay-ignore').removeClass('printnplay');
+  $('.exportable').css("border-color", "black").css("border-width","2px");
 }
 
 export_all = function () {

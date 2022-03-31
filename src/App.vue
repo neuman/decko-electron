@@ -327,6 +327,8 @@ export default {
         doPrintize: false,
         html: undefined,
         templateFilePath: undefined,
+        dpi:300,
+        stylesheets:[],
       },
       paneDragging: false,
       contextedAsset: undefined,
