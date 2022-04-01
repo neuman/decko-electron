@@ -30,12 +30,15 @@
               @resized="handlePaneEvent('resized', $event)"
             >
               <pane>
+                <div v-on:click="isClicked" v-on:contextmenu="handleEditorRightClick">
                 <codemirror
                   ref="editor"
                   class="h-100"
                   v-model="msg"
                   :options="cmOptions"
+                  
                 ></codemirror>
+                </div>
               </pane>
               <pane>
                 <div
@@ -88,12 +91,14 @@
               )
             "
           >
+          <div v-on:click="isClicked" v-on:contextmenu="handleEditorRightClick">
             <codemirror
               ref="editor"
               class="h-100"
               v-model="msg"
               :options="cmOptions"
             ></codemirror>
+            </div>
           </div>
           <div
             class="h-100 checkered"
@@ -190,20 +195,18 @@ const excelToJson = require("convert-excel-to-json");
 const { remote, webFrame } = require("electron");
 const { getCurrentWebContents, Menu, MenuItem } = remote;
 //
-const markdownContextMenu = Menu.buildFromTemplate([
-  { label: "Open File", click() {} },
-  { type: "separator" },
+const editorContextMenu = Menu.buildFromTemplate([
   { label: "Cut", role: "cut" },
   { label: "Copy", role: "copy" },
   { label: "Paste", role: "paste" },
   { label: "Select All", role: "selectall" },
 ]);
 
-window.addEventListener("contextmenu", (event) => {
+/*window.addEventListener("contextmenu", (event) => {
   event.preventDefault();
   //console.log(event);
     markdownContextMenu.popup();
-});
+});*/
 import {
   assetCategories,
   assetFilenames,
@@ -558,6 +561,10 @@ export default {
       } else {
         return path.join(__dirname, relativePath);
       }
+    },
+    handleEditorRightClick(e) {
+      editorContextMenu.popup();
+      e.preventDefault();
     },
     handlePaneEvent(name, event) {
       //(name, event);

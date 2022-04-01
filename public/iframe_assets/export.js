@@ -60,6 +60,9 @@ export_all = function () {
     index++;
     console.log('exporting element', arg.exportName, index, element);
     $(element).addClass('scale-up');
+    $("body > *").show();
+    $("body > *").not(element).hide();
+    
     // do work 
     //window.scrollTo({top:0, left:0, behavior:'instant'});
     html2canvas(element[0],
