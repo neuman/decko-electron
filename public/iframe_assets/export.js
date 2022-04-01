@@ -59,9 +59,8 @@ export_all = function () {
     var element = elements.eq(index);
     index++;
     console.log('exporting element', arg.exportName, index, element);
-    $(element).addClass('scale-up');
-    $("body > *").show();
-    $("body > *").not(element).hide();
+    $(element).css('transform', 'scale(' + arg.dpi / 96 + ')');
+    //$("body > *").not(element).hide();
     
     // do work 
     //window.scrollTo({top:0, left:0, behavior:'instant'});
@@ -94,7 +93,7 @@ export_all = function () {
 
 
         $(canvas).remove();
-        $(element).removeClass('scale-up');
+        $(element).css('transform', 'scale(1)');
       });
     //timer again
     /*if (index < elements.length - 1) {

@@ -31,13 +31,12 @@
             >
               <pane>
                 <div v-on:contextmenu="handleEditorRightClick" class="h-100">
-                <codemirror
-                  ref="editor"
-                  class="h-100"
-                  v-model="msg"
-                  :options="cmOptions"
-                  
-                ></codemirror>
+                  <codemirror
+                    ref="editor"
+                    class="h-100"
+                    v-model="msg"
+                    :options="cmOptions"
+                  ></codemirror>
                 </div>
               </pane>
               <pane>
@@ -91,13 +90,13 @@
               )
             "
           >
-          <div v-on:contextmenu="handleEditorRightClick" class="h-100">
-            <codemirror
-              ref="editor"
-              class="h-100"
-              v-model="msg"
-              :options="cmOptions"
-            ></codemirror>
+            <div v-on:contextmenu="handleEditorRightClick" class="h-100">
+              <codemirror
+                ref="editor"
+                class="h-100"
+                v-model="msg"
+                :options="cmOptions"
+              ></codemirror>
             </div>
           </div>
           <div
@@ -330,8 +329,10 @@ export default {
         doPrintize: false,
         html: undefined,
         templateFilePath: undefined,
-        dpi:300,
-        stylesheets:[],
+        dpi: undefined,
+      },
+      projectConfig: {
+        dpi: undefined,
       },
       paneDragging: false,
       contextedAsset: undefined,
@@ -697,8 +698,10 @@ export default {
     },
     openProjectFile(filePath) {
       this.rootDirectoryPath = path.dirname(filePath);
+
       this.datafileFilePath = path.join(this.rootDirectoryPath, "project.xlsx");
-      //this.Assets = JSON.parse(this.loadFile(filePath, true));
+      this.projectConfig = JSON.parse(this.loadFile(filePath, true));
+      this.previewOptions.dpi = this.projectConfig.dpi;
       //if this is a different os, adjust the paths
       if (this.sep != path.sep) {
         this.Assets.forEach((element) => {
@@ -1045,7 +1048,7 @@ export default {
     saveProject() {
       fs.writeFileSync(
         path.join(this.rootDirectoryPath, "project.dko"),
-        JSON.stringify(this.Assets, 4, " ")
+        JSON.stringify(this.projectConfig, 4, " ")
       );
       console.log("File written successfully\n");
     },
@@ -1078,10 +1081,11 @@ export default {
           var cardBodyHTML = "\n";
           for (const column in headerRow) {
             console.log("column", column);
-            cardBodyHTML += createHtmlElement({
-              name: "p",
-              html: "<b>"+column + "</b>: {{ " + column + " }}",
-            }) + "\n";
+            cardBodyHTML +=
+              createHtmlElement({
+                name: "p",
+                html: "<b>" + column + "</b>: {{ " + column + " }}",
+              }) + "\n";
           }
           newTemplate +=
             "\n{{#each " +
@@ -1091,7 +1095,7 @@ export default {
               name: "div",
               attributes: {
                 class: "card exportable preview",
-                style:"width:2.5in; height:3.5in;",
+                style: "width:2.5in; height:3.5in;",
               },
 
               html: cardBodyHTML,
@@ -1263,6 +1267,10 @@ export default {
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
         this.openFilePathInEditor(match.relativeFilePath);
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
       } else if (match.category == assetCategories.TEXT) {
         electron.ipcRenderer.send("menu-item-toggled", {
           menuItemID: "save_open_file",

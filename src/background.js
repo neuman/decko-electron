@@ -152,14 +152,14 @@ app.on('ready', async () => {
             win.webContents.send('newProject', '');
           }
         },
-        {
+        /*{
           label: 'Save Project',
           id: 'save_project',
           enabled: false,
           click: function () {
             win.webContents.send('saveProject', '');
           }
-        },
+        },*/
         { type: 'separator' },
         {
           label: 'New File',
@@ -555,7 +555,11 @@ ipcMain.on('get-text-asset', (event, arg) => {
 
 
 ipcMain.on('menu-item-toggled', (event, arg) => {
+  try{
   electron.Menu.getApplicationMenu().getMenuItemById(arg.menuItemID).enabled = arg.enabled;
+  }catch (e) {
+    console.error(e.toString())
+  }
   event.returnValue = arg;
 })
 
