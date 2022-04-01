@@ -30,7 +30,7 @@
               @resized="handlePaneEvent('resized', $event)"
             >
               <pane>
-                <div v-on:click="isClicked" v-on:contextmenu="handleEditorRightClick">
+                <div v-on:contextmenu="handleEditorRightClick" class="h-100">
                 <codemirror
                   ref="editor"
                   class="h-100"
@@ -91,7 +91,7 @@
               )
             "
           >
-          <div v-on:click="isClicked" v-on:contextmenu="handleEditorRightClick">
+          <div v-on:contextmenu="handleEditorRightClick" class="h-100">
             <codemirror
               ref="editor"
               class="h-100"
