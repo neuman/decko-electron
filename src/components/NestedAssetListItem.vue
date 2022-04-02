@@ -112,6 +112,9 @@ export default {
   created: function () {
     //this.assignColorIcon();
     this.category = getAssetCategory(this.label);
+    if(this.depth == 0){
+      this.myExpanded = true;
+    }
   },
   methods: {
     isClicked() {
