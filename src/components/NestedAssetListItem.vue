@@ -81,6 +81,8 @@ export default {
         icString = "file-code";
       } else if (this.category == assetCategories.TEXT) {
         icString = "file-alt";
+      } else if (this.category == assetCategories.MARKDOWN) {
+        icString = "file-alt";
       } else {
         icString = "file";
       }
@@ -100,6 +102,10 @@ export default {
         icColor = "teal";
       } else if (this.category == assetCategories.BOX) {
         icColor = "goldenrod";
+      } else if (this.category == assetCategories.TEXT) {
+        icColor = "hotpink";
+      }else if (this.category == assetCategories.MARKDOWN) {
+        icColor = "mediumblue";
       } else {
         icColor = "#fff";
       }

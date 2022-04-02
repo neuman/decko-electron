@@ -47,6 +47,7 @@ export function buildWebPage(css, scripts, body) {
     JSON: "json",
     BOX:"box",
     TEXT:"text",
+    MARKDOWN:"markdown",
   };
   
 
@@ -58,7 +59,8 @@ export function buildWebPage(css, scripts, body) {
     IMAGE: ["jpg","jpeg","png","svg"],
     JSON: ["json", "dko", "js"],
     BOX: ["dkob"],
-    TEXT:["txt","md"],
+    TEXT:["txt"],
+    MARKDOWN:["md"],
   };
 
   export const assetFilenames = {
@@ -112,7 +114,11 @@ export function buildWebPage(css, scripts, body) {
       assetCategoryExtensions.TEXT.includes(getFileExtension(fileName))
     ) {
       return assetCategories.TEXT;
-    } else {
+    } else if (
+      assetCategoryExtensions.MARKDOWN.includes(getFileExtension(fileName))
+    ) {
+      return assetCategories.MARKDOWN;
+    }else {
       return assetCategories.OTHER;
     }
   }

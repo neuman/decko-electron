@@ -19,7 +19,7 @@
           <div
             class="h-100"
             v-if="
-              ['box', 'template', 'stylesheet'].includes(
+              ['box', 'template', 'stylesheet','markdown'].includes(
                 this.selectedDirectoryListItem.category
               )
             "
@@ -39,7 +39,7 @@
                   ></codemirror>
                 </div>
               </pane>
-              <pane>
+              <pane class="bg-light overflow-y-handled">
                 <div
                   v-if="paneDragging"
                   style="
@@ -49,7 +49,14 @@
                     z-index: 100;
                   "
                 ></div>
+                          <div
+            style="height: 100%; width: 100%"
+            v-if="this.selectedDirectoryListItem.category == 'markdown'"
+          >
+          <p v-html="msgmd"></p>
+          </div>
                 <preview-iframe
+                v-else
                   ref="iframeContent"
                   style="height: 100%; width: 100%; border: none"
                 ></preview-iframe>
@@ -172,6 +179,7 @@ import { codemirror } from "vue-codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/mode/javascript/javascript.js";
+import "codemirror/mode/gfm/gfm.js";
 import "codemirror-formatting";
 import "codemirror/addon/edit/matchtags.js";
 import "codemirror/addon/search/searchcursor.js";
@@ -306,6 +314,7 @@ export default {
       Files: {},
       DataSheets: [],
       msg: undefined,
+      msgmd:undefined,
       spreadsheet: undefined,
       hotSettings: {
         licenseKey: "non-commercial-and-evaluation",
@@ -761,6 +770,7 @@ export default {
                 assetCategories.BOX,
                 assetCategories.DATAFILE,
                 assetCategories.STYLESHEET,
+                assetCategories.MARKDOWN,
               ].includes(tempThis.selectedDirectoryListItem.category)
             ) {
               console.log(pathIn, "has been changed");
@@ -970,6 +980,10 @@ export default {
       this.previewOptions.head = extractedTemplate.head;
       this.previewOptions.box = undefined;
       electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
+    },
+    markdownToHTML(markdown_in){
+    var template = Handlebars.compile("{{#markdown}}{{ text }}{{/markdown}}");
+    return template({text:markdown_in});
     },
     openFilePathInEditor(filePath) {
       console.log(
@@ -1255,14 +1269,21 @@ export default {
         });
         this.cmOptions.mode = "json";
         this.openFilePathInEditor(match.relativeFilePath);
-      } else if (match.category == assetCategories.STYLESHEET) {
+      } else if (match.category == assetCategories.MARKDOWN) {
+        electron.ipcRenderer.send("menu-item-toggled", {
+          menuItemID: "save_open_file",
+          enabled: true,
+        });
+        this.cmOptions.mode = "gfm";
+        this.openFilePathInEditor(match.relativeFilePath);
+        this.msgmd = this.markdownToHTML(this.msg)
+      }  else if (match.category == assetCategories.STYLESHEET) {
         electron.ipcRenderer.send("menu-item-toggled", {
           menuItemID: "save_open_file",
           enabled: true,
         });
         this.cmOptions.mode = "css";
         this.openFilePathInEditor(match.relativeFilePath);
-
         this.renderLastTemplatePreview();
       } else if (match.category == assetCategories.JSON) {
         this.cmOptions.mode = "javascript";
