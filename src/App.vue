@@ -19,7 +19,7 @@
           <div
             class="h-100"
             v-if="
-              ['box', 'template', 'stylesheet','markdown'].includes(
+              ['box', 'template', 'stylesheet', 'markdown'].includes(
                 this.selectedDirectoryListItem.category
               )
             "
@@ -49,14 +49,14 @@
                     z-index: 100;
                   "
                 ></div>
-                          <div
-            style="height: 100%; width: 100%"
-            v-if="this.selectedDirectoryListItem.category == 'markdown'"
-          >
-          <p v-html="msgmd"></p>
-          </div>
+                <div
+                  style="height: 100%; width: 100%"
+                  v-if="this.selectedDirectoryListItem.category == 'markdown'"
+                >
+                  <p v-html="msgmd"></p>
+                </div>
                 <preview-iframe
-                v-else
+                  v-else
                   ref="iframeContent"
                   style="height: 100%; width: 100%; border: none"
                 ></preview-iframe>
@@ -143,9 +143,23 @@
 <script>
 const prompt = require("electron-prompt");
 const Handlebars = require("handlebars");
+import MarkdownIt from "markdown-it";
+import prism from "markdown-it-prism";
+
+//import "prismjs/components/prism-clike";
+//import "prismjs/components/prism-java";
+import "prismjs/components/prism-markup";
+import "prismjs/components/prism-markup-templating";
+import "prismjs/components/prism-handlebars";
+const md = new MarkdownIt();
+md.use(prism);
 var $ = require("jquery");
 var markdown = require("helper-markdown");
-Handlebars.registerHelper("markdown", markdown({}));
+//Handlebars.registerHelper("markdown", markdown({}));
+Handlebars.registerHelper("markdown", function (aString) {
+  console.log('astring', aString.data.root.text);
+  return md.render(aString.data.root.text);
+});
 Handlebars.registerHelper("if_eq", function (a, b, opts) {
   if (a == b) {
     return opts.fn(this);
@@ -187,13 +201,14 @@ import "codemirror/addon/search/search.js";
 import "codemirror/addon/dialog/dialog.js";
 import "codemirror/addon/dialog/dialog.css";
 import "./theme/decko_codemirror.css";
+import "./theme/prism.css";
 import { HotTable } from "@handsontable/vue";
 import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import VueZoomer from "vue-zoomer";
 const createHtmlElement = require("create-html-element");
-var MarkdownIt = require("markdown-it");
+//var MarkdownIt = require("markdown-it");
 var path = require("path");
 var chokidar = require("chokidar");
 var ls = require("list-directory-contents");
@@ -239,7 +254,9 @@ export default {
   },
   created: function () {
     if (process.env.NODE_ENV == "development") {
-      this.openProjectFile("/home/neuman/Documents/emilydemo/project.dko");
+      this.openProjectFile(
+        "/home/neuman/Documents/work/UnicycleDeck/project.dko"
+      );
     }
     electron.ipcRenderer.removeAllListeners("openProject");
     electron.ipcRenderer.on("openProject", (event, arg) => {
@@ -314,7 +331,7 @@ export default {
       Files: {},
       DataSheets: [],
       msg: undefined,
-      msgmd:undefined,
+      msgmd: undefined,
       spreadsheet: undefined,
       hotSettings: {
         licenseKey: "non-commercial-and-evaluation",
@@ -720,7 +737,7 @@ export default {
       }
       this.openProjectDirectory(path.dirname(filePath));
       var watcher = chokidar.watch(path.dirname(filePath), {
-        ignored: /^\./,
+        ignored: /[/\\]\./,
         persistent: true,
       });
 
@@ -981,9 +998,9 @@ export default {
       this.previewOptions.box = undefined;
       electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
     },
-    markdownToHTML(markdown_in){
-    var template = Handlebars.compile("{{#markdown}}{{ text }}{{/markdown}}");
-    return template({text:markdown_in});
+    markdownToHTML(markdown_in) {
+      var template = Handlebars.compile("{{#markdown}}{{ text }}{{/markdown}}");
+      return template({ text: markdown_in });
     },
     openFilePathInEditor(filePath) {
       console.log(
@@ -1276,8 +1293,8 @@ export default {
         });
         this.cmOptions.mode = "gfm";
         this.openFilePathInEditor(match.relativeFilePath);
-        this.msgmd = this.markdownToHTML(this.msg)
-      }  else if (match.category == assetCategories.STYLESHEET) {
+        this.msgmd = this.markdownToHTML(this.msg);
+      } else if (match.category == assetCategories.STYLESHEET) {
         electron.ipcRenderer.send("menu-item-toggled", {
           menuItemID: "save_open_file",
           enabled: true,

@@ -8,16 +8,6 @@
     "url": "http://www.theneuman.com"
   },
   "homepage": "https://github.com/neuman/decko-electron",
-  "build": {
-    "fileAssociations": [
-      {
-        "ext": ".dko",
-        "name": "Decko File",
-        "role": "Editor",
-        "perMachine": true
-      }
-    ]
-  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -55,6 +45,7 @@
     "list-directory-contents": "0.0.3",
     "lodash.uniqueid": "^4.0.1",
     "markdown-it": "^11.0.0",
+    "markdown-it-prism": "^2.2.3",
     "mime-types": "^2.1.27",
     "mustache": "^4.0.1",
     "portal-vue": "^2.1.7",
