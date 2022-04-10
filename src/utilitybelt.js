@@ -55,7 +55,7 @@ export function buildWebPage(css, scripts, body) {
     DIRECTORY: [""],
     TEMPLATE: ["html"],
     STYLESHEET: ["css","scss"],
-    DATAFILE: ["dkod"],
+    DATAFILE: ["xlsx"],
     IMAGE: ["jpg","jpeg","png","svg"],
     JSON: ["json", "dko", "js"],
     BOX: ["dkob"],

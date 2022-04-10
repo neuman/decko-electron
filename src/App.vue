@@ -92,7 +92,7 @@
           <div
             class="h-100"
             v-if="
-              ['datafile', 'stylesheet', 'json', 'text'].includes(
+              ['stylesheet', 'json', 'text'].includes(
                 this.selectedDirectoryListItem.category
               )
             "
@@ -127,8 +127,10 @@
             ></preview-iframe>
           </div>
           <div style="height: 100%; width: 100%" v-else>
-            Decko Can't Open This File. Please navigate to it in your file
-            explorer to view or modify.
+              <b-jumbotron bg-variant="primary" header="Open Externally" lead="Decko Can't Open This File. Double-click the file or click below to open it in an external application.">
+    <b-button variant="dark"  href="#" v-on:click="launchSelectedDirectoryListItemNatively">Open File</b-button>
+  </b-jumbotron>
+            
           </div>
         </div>
       </pane>
@@ -424,6 +426,12 @@ export default {
     launchontextedAssetNatively() {
       electron.shell.openPath(
         path.join(this.rootDirectoryPath, this.contextedAsset)
+      );
+    },
+    launchSelectedDirectoryListItemNatively() {
+      console.log("selectedDirectoryListItem", this.selectedDirectoryListItem);
+      electron.shell.openPath(
+        path.join(this.rootDirectoryPath, this.selectedDirectoryListItem.relativeFilePath)
       );
     },
     duplicateContextedAsset() {
