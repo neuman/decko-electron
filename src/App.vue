@@ -233,6 +233,10 @@ const editorContextMenu = Menu.buildFromTemplate([
   //console.log(event);
     markdownContextMenu.popup();
 });*/
+getCurrentWebContents().on('will-navigate', function (e, url) {
+    e.preventDefault();
+    electron.shell.openExternal(url);
+});
 import {
   assetCategories,
   assetFilenames,
