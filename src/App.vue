@@ -155,11 +155,13 @@ const md = new MarkdownIt();
 md.use(prism);
 var $ = require("jquery");
 var markdown = require("helper-markdown");
-//Handlebars.registerHelper("markdown", markdown({}));
-Handlebars.registerHelper("markdown", function (aString) {
-  console.log('astring', aString.data.root.text);
-  return md.render(aString.data.root.text);
-});
+Handlebars.registerHelper("markdown", markdown({}));
+/*Handlebars.registerHelper("markdown", function (opts) {
+  //console.log('astring', aString.data.root.text);
+  console.log('opts', opts);
+  console.log('opts.fn(this)', opts.fn(this));
+  return md.render(opts.fn(this));
+});*/
 Handlebars.registerHelper("if_eq", function (a, b, opts) {
   if (a == b) {
     return opts.fn(this);
@@ -416,6 +418,11 @@ export default {
     },
     showContextedAssetInFolder() {
       electron.shell.showItemInFolder(
+        path.join(this.rootDirectoryPath, this.contextedAsset)
+      );
+    },
+    launchontextedAssetNatively() {
+      electron.shell.openPath(
         path.join(this.rootDirectoryPath, this.contextedAsset)
       );
     },
@@ -999,8 +1006,8 @@ export default {
       electron.ipcRenderer.send("piece-preview-opened", this.previewOptions);
     },
     markdownToHTML(markdown_in) {
-      var template = Handlebars.compile("{{#markdown}}{{ text }}{{/markdown}}");
-      return template({ text: markdown_in });
+
+      return md.render(markdown_in);
     },
     openFilePathInEditor(filePath) {
       console.log(
@@ -1228,6 +1235,10 @@ export default {
         {
           label: "Open Containing Folder",
           click: this.showContextedAssetInFolder,
+        },
+        {
+          label: "Launch Natively",
+          click: this.launchontextedAssetNatively,
         },
         {
           label: "Rename",
