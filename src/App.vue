@@ -127,7 +127,7 @@
             ></preview-iframe>
           </div>
           <div style="height: 100%; width: 100%" v-else>
-              <b-jumbotron bg-variant="primary" header="Open Externally" lead="Decko Can't Open This File. Double-click the file or click below to open it in an external application.">
+              <b-jumbotron bg-variant="primary" header="Open Externally" lead="Decko Can't Open This File. Click below to open it in an external application.">
     <b-button variant="dark"  href="#" v-on:click="launchSelectedDirectoryListItemNatively">Open File</b-button>
   </b-jumbotron>
             
