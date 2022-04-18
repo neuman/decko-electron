@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-100">
     <splitpanes v-if="rootDirectoryPath" class="default-theme">
-      <pane size="30" class="bg-light overflow-y-handled">
+      <pane size="10" class="bg-light overflow-y-scroll">
         <nested-asset-list-item
           :label="Files.label"
           :relativeFilePath="Files.relativeFilePath"
@@ -10,6 +10,7 @@
           :children="Files.children"
           :category="Files.category"
           :isDirectory="Files.isDirectory"
+          :isSelected="Files.isDirectory"
           @asset-selected="assetSelected"
           @asset-contexted="assetContexted"
         ></nested-asset-list-item>

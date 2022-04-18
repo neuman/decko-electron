@@ -37,6 +37,7 @@ function createWindow() {
       webSecurity: false,
     }
   })
+  win.maximize();
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -355,7 +356,7 @@ var port = 3000;
 var server = http.createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.end('<head><style>body {background-color: #181818;color:#ffffff;font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; font-size: 0.9375rem; font-weight: 400;}</style></head><body>JSON Invalid</body>\n');
+  res.end('<head><style>body {background-color: #181818;color:#ffffff;font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; font-size: 0.9375rem; font-weight: 400;}</style></head><body><h1>No Preview To Display.</h1></body>\n');
 });
 console.log('made new server');
 

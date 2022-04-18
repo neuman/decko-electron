@@ -4,7 +4,7 @@
       <div
         class="text-nowrap assetListItem defaultCursor unselectable"
         v-bind:id="getRelativeFilePath"
-        v-bind:style="{ 'padding-left': myIndentString + 'px' }"
+        v-bind:style="{ 'padding-left': (myIndentString + 'px'), 'background':getBackgroundColor }"
         :for="label"
       >
         <font-awesome-icon :icon="getIcon" v-bind:style="{ color: getColor }" />
@@ -52,6 +52,7 @@ export default {
       myChildren: this.children,
       myIndentString: this.depth * 20,
       myExpanded: false,
+      myIsSelected:false,
     };
   },
   computed: {
@@ -87,6 +88,14 @@ export default {
         icString = "file";
       }
       return icString;
+    },
+    getBackgroundColor: function () {
+       return "transparent";
+      /*if(this.myIsSelected){
+        return "purple";
+      }else{
+      return "transparent";
+      }*/
     },
     getColor: function () {
       var icColor = "";
@@ -128,6 +137,8 @@ export default {
         this.myExpanded = !this.myExpanded;
       } else {
         this.$emit("asset-selected", this.relativeFilePath);
+        this.myIsSelected = true;
+        console.log("this.$parent",this.$parent);
       }
     },
     childClicked(relativeFilePath) {

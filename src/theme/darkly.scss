@@ -11029,11 +11029,15 @@ $bv-enable-table-stacked: false;
     background-color:#181818;
 }
 
+.overflow-y-scroll{
+  overflow-y:scroll;
+}
+
 .overflow-y-handled{
   overflow-y:hidden;
 }
 .overflow-y-handled:hover{
-  overflow-y:scroll;
+  overflow-y:hidden;
 }
 
 .overflow-x-handled{

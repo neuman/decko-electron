@@ -58,8 +58,8 @@ export_all = function () {
   doNext = function () {
     var element = elements.eq(index);
     index++;
-    console.log('exporting element', arg.exportName, index, element);
-    $(element).css('transform', 'scale(' + arg.dpi / 96 + ')');
+    console.log('exporting element', arg.dpi, index, element);
+    $(element).css('transform', 'scale(' + (arg.dpi / 96) + ')');
     //$("body > *").not(element).hide();
     
     // do work 
