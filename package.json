@@ -33,6 +33,7 @@
     "convert-excel-to-json": "^1.7.0",
     "core-js": "^3.6.5",
     "create-html-element": "^3.0.0",
+    "decode-html": "^2.0.0",
     "electron-context-menu": "^2.3.0",
     "electron-icon-builder": "^2.0.1",
     "electron-prompt": "^1.7.0",

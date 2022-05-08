@@ -165,6 +165,9 @@ Handlebars.registerHelper("markdown", markdown({}));
   console.log('opts.fn(this)', opts.fn(this));
   return md.render(opts.fn(this));
 });*/
+Handlebars.registerHelper("md", function (opts) {
+  return md.render(decode(opts.fn(this)));
+});
 Handlebars.registerHelper("if_eq", function (a, b, opts) {
   if (a == b) {
     return opts.fn(this);
@@ -212,6 +215,7 @@ import Handsontable from "handsontable";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import VueZoomer from "vue-zoomer";
+import decode from "decode-html";
 const createHtmlElement = require("create-html-element");
 //var MarkdownIt = require("markdown-it");
 var path = require("path");
@@ -264,7 +268,7 @@ export default {
   created: function () {
     if (process.env.NODE_ENV == "development") {
       this.openProjectFile(
-        "/home/neuman/Documents/work/UnicycleDeck/project.dko"
+        "/home/neuman/Documents/work/captainly/project.dko"
       );
     }
     electron.ipcRenderer.removeAllListeners("openProject");

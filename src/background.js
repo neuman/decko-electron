@@ -446,6 +446,7 @@ function generateServer(arg) {
         var jsFiles = [
           loadFile(getPublicPath(path.join('iframe_assets', 'jquery.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'html2canvas.js'))),
+          loadFile(getPublicPath(path.join('iframe_assets', 'dom2image.min.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'canvas2image.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'three.min.js'))),
           loadFile(getPublicPath(path.join('iframe_assets', 'orbit.js'))),
