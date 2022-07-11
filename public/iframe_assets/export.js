@@ -59,7 +59,7 @@ export_all = function () {
     var element = elements.eq(index);
     index++;
     console.log('exporting element', arg.dpi, index, element);
-    $(element).css('transform', 'scale(' + (arg.dpi / 96) + ')');
+    //$(element).css('transform', 'scale(' + (arg.dpi / 96) + ')');
     //$("body > *").not(element).hide();
     
     // do work 
@@ -68,7 +68,7 @@ export_all = function () {
       {
         backgroundColor: null,
         allowTaint: true,
-        scale:5,
+        scale:3.125,
       }).then(function (canvas) {
         document.body.appendChild(canvas);
         var dataURL = canvas.toDataURL();

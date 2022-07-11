@@ -154,18 +154,21 @@ import prism from "markdown-it-prism";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-markup-templating";
 import "prismjs/components/prism-handlebars";
+import markdownItAttrs from'markdown-it-attrs';
+import markDownItBracketedSpans from 'markdown-it-bracketed-spans'
+
+
 const md = new MarkdownIt();
 md.use(prism);
+md.use(markDownItBracketedSpans);
+md.use(markdownItAttrs, {
+  // optional, these are default options
+  leftDelimiter: '{',
+  rightDelimiter: '}',
+  allowedAttributes: []  // empty array = all attributes are allowed
+});
 var $ = require("jquery");
-var markdown = require("helper-markdown");
-Handlebars.registerHelper("markdown", markdown({}));
-/*Handlebars.registerHelper("markdown", function (opts) {
-  //console.log('astring', aString.data.root.text);
-  console.log('opts', opts);
-  console.log('opts.fn(this)', opts.fn(this));
-  return md.render(opts.fn(this));
-});*/
-Handlebars.registerHelper("md", function (opts) {
+Handlebars.registerHelper("markdown", function (opts) {
   return md.render(decode(opts.fn(this)));
 });
 Handlebars.registerHelper("if_eq", function (a, b, opts) {
@@ -266,11 +269,11 @@ export default {
     Pane,
   },
   created: function () {
-    if (process.env.NODE_ENV == "development") {
+    /*if (process.env.NODE_ENV == "development") {
       this.openProjectFile(
         "/home/neuman/Documents/work/captainly/project.dko"
       );
-    }
+    }*/
     electron.ipcRenderer.removeAllListeners("openProject");
     electron.ipcRenderer.on("openProject", (event, arg) => {
       this.openProjectDialog();

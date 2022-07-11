@@ -46,6 +46,8 @@
     "list-directory-contents": "0.0.3",
     "lodash.uniqueid": "^4.0.1",
     "markdown-it": "^11.0.0",
+    "markdown-it-attrs": "^4.1.4",
+    "markdown-it-bracketed-spans": "^1.0.1",
     "markdown-it-prism": "^2.2.3",
     "mime-types": "^2.1.27",
     "mustache": "^4.0.1",
