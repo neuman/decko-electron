@@ -1,3 +1,7 @@
+# About
+Decko is an all-in-one platform for using web technologies like HTML, CSS, and JS to prototype and publish board games. Because the system is template based, changes to the template file ripple to every card, piece or board automatically.
+![space-1.jpg](docs/images/SplashScreen.png)
+
 # Quick Start
 1. Get decko now for Linux and Windows [here](https://github.com/neuman/decko-electron/releases). 
 1. Launch Decko and go to 'File > New Project' and select 'Classic Card Deck' then choose a project name to create a fresh sample project. 
@@ -6,18 +10,18 @@
 1. Using the file tree, open 'templates/boxart.html' then export piece. After doing this, 'box.dkob' will have the cover art populated and will be able to render. 
 
 
-# About
-Decko is an all-in-one platform for using webtechnologies like HTML, CSS, and JS to prototype and publish board games. Currently Decko is only developed enoug to support users with a working knowledge of web development. It's possible that the app may develope into something with a full WYSIWYG editor, but it's not there yet. 
-
 
 ## Features
-- Write templates with real HTML and use inline or referenced CSS files.
-- Render components directly from excel.
-- Export individual images of components for easy upload to printers or virtual gaming systems. 
-- Export print-and-play style component sheets in color or printer-optimized black and white. 
-- See changes instantly when changing any file in your game directory. Even works with changes made with external editors like vscode, photoshop, and excel. 
-- Support for Markdown inside of excel data. 
-- Create 3D renderings of your game box from html templates. Export image snapshots from any angle. 
+| | |
+|---|---|
+|Write templates with real HTML and use inline or referenced CSS files. | ![space-1.jpg](docs/images/Template.png) |
+|Render components directly from excel. | ![space-1.jpg](docs/images/GenerateFromSpreadsheetData.png) |
+|Export individual images of components for easy upload to printers or virtual gaming systems.  | ![space-1.jpg](docs/images/ExportDirectoryOfImages.png) |
+|Export print-and-play style component sheets in color or printer-optimized black and white.| ![space-1.jpg](docs/images/ExportPrintAndPlay.png) |
+|Support for Markdown inside of excel data. | ![space-1.jpg](docs/images/MarkdownSupport.png) |
+|Create 3D renderings of your game box from html templates. Export image snapshots from any angle. | ![space-1.jpg](docs/images/BoxRenderer.png) |
+|See changes instantly when changing any file in your game directory. Even works with changes made with external editors like vscode, photoshop, and excel. | ![space-1.jpg](docs/images/BoxArt.png) |
+|Use built in chrome devtools you're used to for working with HTML/CSS/JS.| ![space-1.jpg](docs/images/DevTools.png) |
 
 ## Development Flow
 Using Decko to make a game is very similar to building a web application with just a data model, and a view layer.To get started you only need to have an idea of the game's data model, custom visual designs can come later or not at all. 
@@ -56,51 +60,3 @@ Using Decko to make a game is very similar to building a web application with ju
     <link rel="stylesheet" href="fontawesome/css/all.css">
   {{/block}}  
 ```
-
-# To Build Decko Locally
-#### Ignore this section unless you want to make changes to Decko itself. 
-
-
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Build Deb
-npm run electron:build -- --linux deb
-
-### Build Exe
-electron:build -- --linux deb --win nsis
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
-### Menu Items
-- File
-- - New Folder: Select Location, Choose Name, Create Structure with Empty data.json, empty styles.css
-- - Open Folder: Select Location, load data.json, look for changes, update structure, update auto-generated-templates
-- - Import Data: update json.data, update structure, update auto-generated-templates
-- - Save: save current file
-- - Save All: save all files
-- Template
-- - Format: auto format html
-- Export
-- - Export Selected
-- - Export Magnetic
-- - Export All
-- - Print Export
