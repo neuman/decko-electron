@@ -68,7 +68,7 @@ export_all = function () {
       {
         backgroundColor: null,
         allowTaint: true,
-        scale:3.125,
+        scale:1.56,
       }).then(function (canvas) {
         document.body.appendChild(canvas);
         var dataURL = canvas.toDataURL();
